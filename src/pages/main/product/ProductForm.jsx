@@ -1,35 +1,105 @@
 // components/ProductForm.js
-import React, { useState, useRef } from 'react';
-import '../../styles/AddProduct.css';
+import React, { useState, useRef, useEffect } from 'react';
+import '../../../styles/AddProduct.css';
+import ApiService from '../../../config/ApiService';
+import { useAlert } from '../../../context/alert/AlertContext';
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
-    category: '',
+    category_id: '',
     name: '',
     slug: '',
     description: '',
     price: '',
     stock: '',
-    is_active: true,
-    mainImage: null,
-    otherImages: []
+    main_image: null,
+    detail_images: []
   });
 
+  const [categories, setCategories] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Use the alert context instead of local state
+  const { 
+    showSuccess, 
+    showError, 
+    showWarning, 
+    showInfo, 
+    showLoading,
+    removeAlert 
+  } = useAlert();
+
   const fileInputRef = useRef(null);
   const additionalFilesInputRef = useRef(null);
 
-  const categories = [
-    { value: '', label: 'Select Category' },
-    { value: 'electronics', label: 'Electronics' },
-    { value: 'clothing', label: 'Clothing & Fashion' },
-    { value: 'home', label: 'Home & Garden' },
-    { value: 'sports', label: 'Sports & Outdoors' },
-    { value: 'books', label: 'Books & Media' },
-    { value: 'beauty', label: 'Beauty & Personal Care' },
-    { value: 'toys', label: 'Toys & Games' }
-  ];
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    let loadingAlertId = null;
+    
+    try {
+      // Show loading alert for categories
+      loadingAlertId = showLoading('Loading categories...', 'Fetching Data');
+      
+      const response = await ApiService.getAdminCategories();
+      console.log('Categories fetched:', response.data);
+      
+      const categoriesData = response.data.categories || response.data || [];
+      setCategories(categoriesData);
+      
+      // Remove loading alert on success
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      
+      // Remove loading alert on error
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      
+      // Show appropriate error alert
+      if (error.response?.status === 401) {
+        showError(
+          'Your session has expired. Please login again to access categories.',
+          'Authentication Required',
+          { duration: 6000 }
+        );
+      } else if (error.response?.status === 403) {
+        showError(
+          'You do not have permission to view categories.',
+          'Access Denied',
+          { duration: 6000 }
+        );
+      } else if (error.message === 'Network Error') {
+        showError(
+          'Unable to connect to the server. Please check your internet connection.',
+          'Connection Error',
+          { duration: 6000 }
+        );
+      } else if (error.response?.status >= 500) {
+        showError(
+          'Our servers are currently experiencing issues. Please try again later.',
+          'Server Error',
+          { duration: 6000 }
+        );
+      } else {
+        showError(
+          'Failed to load categories. Please try refreshing the page.',
+          'Load Failed',
+          { duration: 5000 }
+        );
+      }
+      
+      setErrors(prev => ({
+        ...prev,
+        categories: 'Failed to load categories'
+      }));
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,6 +107,13 @@ const ProductForm = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleDrag = (e) => {
@@ -85,41 +162,58 @@ const ProductForm = () => {
     );
 
     if (imageFiles.length === 0) {
-      alert('Please select valid image files (JPEG, PNG, WebP, GIF)');
+      showError(
+        'Please select valid image files (JPEG, PNG, WebP, GIF)',
+        'Invalid File Type',
+        { duration: 5000 }
+      );
       return;
+    }
+
+    if (errors.detail_images) {
+      setErrors(prev => ({
+        ...prev,
+        detail_images: ''
+      }));
     }
 
     if (type === 'main' && imageFiles.length > 0) {
       setFormData(prev => ({
         ...prev,
-        mainImage: imageFiles[0]
+        main_image: imageFiles[0]
       }));
+      showInfo('Main image selected successfully', 'Image Added', { duration: 3000 });
     } else {
+      const newImages = [...formData.detail_images, ...imageFiles].slice(0, 10);
       setFormData(prev => ({
         ...prev,
-        otherImages: [...prev.otherImages, ...imageFiles].slice(0, 10) // Limit to 10 images
+        detail_images: newImages
       }));
+      showInfo(`${imageFiles.length} detail image(s) added`, 'Images Added', { duration: 3000 });
     }
   };
 
   const removeMainImage = () => {
-    setFormData(prev => ({ ...prev, mainImage: null }));
+    setFormData(prev => ({ ...prev, main_image: null }));
+    showInfo('Main image removed', 'Image Removed', { duration: 3000 });
   };
 
   const removeOtherImage = (index) => {
     setFormData(prev => ({
       ...prev,
-      otherImages: prev.otherImages.filter((_, i) => i !== index)
+      detail_images: prev.detail_images.filter((_, i) => i !== index)
     }));
+    showInfo('Detail image removed', 'Image Removed', { duration: 3000 });
   };
 
   const setAsMainImage = (image, index) => {
-    const newOtherImages = formData.otherImages.filter((_, i) => i !== index);
+    const newDetailImages = formData.detail_images.filter((_, i) => i !== index);
     setFormData(prev => ({
       ...prev,
-      mainImage: image,
-      otherImages: [prev.mainImage, ...newOtherImages].filter(Boolean)
+      main_image: image,
+      detail_images: [prev.main_image, ...newDetailImages].filter(Boolean)
     }));
+    showInfo('Image set as main successfully', 'Main Image Updated', { duration: 3000 });
   };
 
   const generateSlug = () => {
@@ -130,36 +224,55 @@ const ProductForm = () => {
         .replace(/[^a-z0-9 -]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .substring(0, 60); // Limit slug length
+        .substring(0, 60);
       setFormData(prev => ({ ...prev, slug }));
+      
+      if (errors.slug) {
+        setErrors(prev => ({
+          ...prev,
+          slug: ''
+        }));
+      }
+      showInfo('Slug generated from product name', 'Slug Generated', { duration: 3000 });
     }
   };
 
   const validateForm = () => {
-    if (!formData.category) {
-      alert('Please select a category');
-      return false;
+    const newErrors = {};
+
+    if (!formData.category_id) {
+      newErrors.category_id = 'Category is required';
     }
     if (!formData.name.trim()) {
-      alert('Please enter a product name');
-      return false;
+      newErrors.name = 'Product name is required';
     }
     if (!formData.slug.trim()) {
-      alert('Please enter a slug or generate one');
-      return false;
+      newErrors.slug = 'Slug is required';
+    }
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
     }
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      alert('Please enter a valid price');
-      return false;
+      newErrors.price = 'Valid price is required';
     }
     if (!formData.stock || parseInt(formData.stock) < 0) {
-      alert('Please enter a valid stock quantity');
+      newErrors.stock = 'Valid stock quantity is required';
+    }
+    if (!formData.main_image) {
+      newErrors.main_image = 'Main image is required';
+    }
+
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      showError(
+        'Please fill in all required fields correctly',
+        'Validation Error',
+        { duration: 5000 }
+      );
       return false;
     }
-    if (!formData.mainImage) {
-      alert('Please upload a main product image');
-      return false;
-    }
+    
     return true;
   };
 
@@ -169,34 +282,160 @@ const ProductForm = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setErrors({});
+    let loadingAlertId = null;
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Product Data:', formData);
-      alert('Product created successfully!');
-      // Reset form or redirect
-    } catch (error) {
-      console.error('Error creating product:', error);
-      alert('Error creating product. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      // Show loading alert for product creation
+      loadingAlertId = showLoading('Creating your product...', 'Processing');
+      
+      // Create FormData for file upload
+      const submitData = new FormData();
+      
+      // Append text fields
+      submitData.append('category_id', formData.category_id);
+      submitData.append('name', formData.name.trim());
+      submitData.append('slug', formData.slug.trim());
+      submitData.append('description', formData.description.trim());
+      submitData.append('price', parseFloat(formData.price));
+      submitData.append('stock', parseInt(formData.stock));
+      submitData.append('is_active', formData.is_active.toString());
+      
+      // Append main image - ensure it's a proper File object
+      if (formData.main_image && formData.main_image instanceof File) {
+        submitData.append('main_image', formData.main_image);
+      }
+      
+      // Append detail images - ensure each is a proper File object
+      formData.detail_images.forEach((image) => {
+        if (image instanceof File) {
+          submitData.append('detail_images', image);
+        }
+      });
 
-  const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset the form? All data will be lost.')) {
+      console.log('Submitting product data...');
+      console.log('Main image:', formData.main_image);
+      console.log('Detail images:', formData.detail_images);
+      
+      const response = await ApiService.createProduct(submitData);
+      
+      console.log('Product created successfully:', response.data);
+      
+      // Remove loading alert and show success
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      showSuccess('Product created successfully!', 'Product Created', { duration: 5000 });
+      
+      // Reset form after successful submission
       setFormData({
-        category: '',
+        category_id: '',
         name: '',
         slug: '',
         description: '',
         price: '',
         stock: '',
         is_active: true,
-        mainImage: null,
-        otherImages: []
+        main_image: null,
+        detail_images: []
       });
+      
+    } catch (error) {
+      console.error('Error creating product:', error);
+      
+      // Remove loading alert on error
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      
+      if (error.response?.data) {
+        const backendErrors = error.response.data;
+        const formattedErrors = {};
+        
+        Object.keys(backendErrors).forEach(key => {
+          if (Array.isArray(backendErrors[key])) {
+            formattedErrors[key] = backendErrors[key].join(', ');
+          } else {
+            formattedErrors[key] = backendErrors[key];
+          }
+        });
+        
+        setErrors(formattedErrors);
+        
+        // Show backend validation errors
+        if (formattedErrors.general) {
+          showError(formattedErrors.general, 'Creation Failed', { duration: 6000 });
+        } else {
+          showError(
+            'Please check the form for errors and try again.',
+            'Validation Error',
+            { duration: 6000 }
+          );
+        }
+      } else if (error.response?.status === 400) {
+        showError(
+          'Invalid product data. Please check all fields and try again.',
+          'Validation Error',
+          { duration: 5000 }
+        );
+      } else if (error.response?.status === 401) {
+        showError(
+          'Your session has expired. Please login again to continue.',
+          'Authentication Required',
+          { duration: 6000 }
+        );
+      } else if (error.response?.status === 403) {
+        showError(
+          'You do not have permission to create products.',
+          'Access Denied',
+          { duration: 6000 }
+        );
+      } else if (error.response?.status === 413) {
+        showError(
+          'The uploaded files are too large. Please reduce the image sizes and try again.',
+          'File Too Large',
+          { duration: 6000 }
+        );
+      } else if (error.message === 'Network Error') {
+        showError(
+          'Unable to connect to the server. Please check your internet connection.',
+          'Connection Error',
+          { duration: 6000 }
+        );
+      } else if (error.response?.status >= 500) {
+        showError(
+          'Our servers are currently experiencing issues. Please try again later.',
+          'Server Error',
+          { duration: 6000 }
+        );
+      } else {
+        showError(
+          'Failed to create product. Please try again.',
+          'Creation Failed',
+          { duration: 5000 }
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReset = () => {
+    const confirmReset = () => {
+      setFormData({
+        category_id: '',
+        name: '',
+        slug: '',
+        description: '',
+        price: '',
+        stock: '',
+        is_active: true,
+        main_image: null,
+        detail_images: []
+      });
+      setErrors({});
+      showInfo('Form has been reset successfully', 'Form Reset', { duration: 3000 });
+    };
+
+    // Use window.confirm for simplicity, or you can create a custom alert confirmation
+    if (window.confirm('Are you sure you want to reset the form? All data will be lost.')) {
+      confirmReset();
     }
   };
 
@@ -207,6 +446,8 @@ const ProductForm = () => {
         <p>Create a new product listing for your store. Fill in all required fields marked with *</p>
       </div>
 
+      {/* Removed local success/error messages since we're using alerts */}
+
       <form onSubmit={handleSubmit} className="add-product-form">
         <div className="add-product-grid">
           {/* Left Column - Basic Information */}
@@ -215,23 +456,28 @@ const ProductForm = () => {
               <h3>Basic Information</h3>
               
               <div className="add-product-form-group">
-                <label htmlFor="category" className="add-product-label required">
+                <label htmlFor="category_id" className="add-product-label required">
                   Category
                 </label>
                 <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
+                  id="category_id"
+                  name="category_id"
+                  value={formData.category_id}
                   onChange={handleInputChange}
-                  className="add-product-select"
+                  className={`add-product-select ${errors.category_id ? 'error' : ''}`}
                   required
+                  disabled={isSubmitting}
                 >
+                  <option value="">Select Category</option>
                   {categories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
+                {errors.category_id && (
+                  <span className="add-product-error-text">{errors.category_id}</span>
+                )}
               </div>
 
               <div className="add-product-form-group">
@@ -245,9 +491,13 @@ const ProductForm = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter product name"
-                  className="add-product-input"
+                  className={`add-product-input ${errors.name ? 'error' : ''}`}
                   required
+                  disabled={isSubmitting}
                 />
+                {errors.name && (
+                  <span className="add-product-error-text">{errors.name}</span>
+                )}
               </div>
 
               <div className="add-product-form-group">
@@ -262,25 +512,29 @@ const ProductForm = () => {
                     value={formData.slug}
                     onChange={handleInputChange}
                     placeholder="product-slug-url"
-                    className="add-product-input"
+                    className={`add-product-input ${errors.slug ? 'error' : ''}`}
                     required
+                    disabled={isSubmitting}
                   />
                   <button 
                     type="button" 
                     className="add-product-generate-btn"
                     onClick={generateSlug}
-                    disabled={!formData.name}
+                    disabled={!formData.name || isSubmitting}
                   >
                     Generate
                   </button>
                 </div>
+                {errors.slug && (
+                  <span className="add-product-error-text">{errors.slug}</span>
+                )}
                 <p className="add-product-helper-text">
                   URL-friendly version of the name. Use lowercase letters, numbers, and hyphens.
                 </p>
               </div>
 
               <div className="add-product-form-group">
-                <label htmlFor="description" className="add-product-label">
+                <label htmlFor="description" className="add-product-label required">
                   Product Description
                 </label>
                 <textarea
@@ -290,8 +544,13 @@ const ProductForm = () => {
                   onChange={handleInputChange}
                   placeholder="Describe your product features, benefits, and specifications..."
                   rows="6"
-                  className="add-product-textarea"
+                  className={`add-product-textarea ${errors.description ? 'error' : ''}`}
+                  required
+                  disabled={isSubmitting}
                 />
+                {errors.description && (
+                  <span className="add-product-error-text">{errors.description}</span>
+                )}
                 <p className="add-product-helper-text">
                   Provide detailed information about your product to help customers make informed decisions.
                 </p>
@@ -315,9 +574,13 @@ const ProductForm = () => {
                     placeholder="0.00"
                     step="0.01"
                     min="0"
-                    className="add-product-input"
+                    className={`add-product-input ${errors.price ? 'error' : ''}`}
                     required
+                    disabled={isSubmitting}
                   />
+                  {errors.price && (
+                    <span className="add-product-error-text">{errors.price}</span>
+                  )}
                 </div>
 
                 <div className="add-product-form-group">
@@ -332,9 +595,13 @@ const ProductForm = () => {
                     onChange={handleInputChange}
                     placeholder="0"
                     min="0"
-                    className="add-product-input"
+                    className={`add-product-input ${errors.stock ? 'error' : ''}`}
                     required
+                    disabled={isSubmitting}
                   />
+                  {errors.stock && (
+                    <span className="add-product-error-text">{errors.stock}</span>
+                  )}
                 </div>
               </div>
 
@@ -345,6 +612,7 @@ const ProductForm = () => {
                     name="is_active"
                     checked={formData.is_active}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                   <span className="add-product-checkmark"></span>
                   <span>Active Product</span>
@@ -366,15 +634,15 @@ const ProductForm = () => {
               
               {/* Main Image Upload */}
               <div className="add-product-image-section">
-                <h4>Main Image</h4>
+                <h4>Main Image *</h4>
                 <p className="add-product-helper-text">
                   This will be the featured image for your product. Recommended size: 800x800px.
                 </p>
                 
-                {formData.mainImage ? (
+                {formData.main_image ? (
                   <div className="add-product-image-preview main-image">
                     <img 
-                      src={URL.createObjectURL(formData.mainImage)} 
+                      src={URL.createObjectURL(formData.main_image)} 
                       alt="Main product preview" 
                     />
                     <div className="add-product-image-actions">
@@ -382,6 +650,7 @@ const ProductForm = () => {
                         type="button" 
                         className="add-product-btn-danger"
                         onClick={removeMainImage}
+                        disabled={isSubmitting}
                       >
                         Remove
                       </button>
@@ -389,7 +658,7 @@ const ProductForm = () => {
                   </div>
                 ) : (
                   <div 
-                    className={`add-product-drop-zone ${dragActive ? 'drag-active' : ''}`}
+                    className={`add-product-drop-zone ${dragActive ? 'drag-active' : ''} ${errors.main_image ? 'error' : ''}`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
@@ -409,17 +678,21 @@ const ProductForm = () => {
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         onChange={(e) => handleFileSelect(e, 'main')}
                         hidden
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
                 )}
+                {errors.main_image && (
+                  <span className="add-product-error-text">{errors.main_image}</span>
+                )}
               </div>
 
-              {/* Additional Images Upload */}
+              {/* Detail Images Upload */}
               <div className="add-product-image-section">
-                <h4>Additional Images</h4>
+                <h4>Detail Images</h4>
                 <p className="add-product-helper-text">
-                  Add up to 10 additional images to showcase your product from different angles.
+                  Add up to 10 detail images to showcase your product from different angles.
                 </p>
                 
                 <div 
@@ -432,7 +705,7 @@ const ProductForm = () => {
                 >
                   <div className="add-product-drop-zone-content">
                     <div className="add-product-drop-zone-icon">🖼️</div>
-                    <p className="add-product-drop-zone-text">Drag & drop additional images here</p>
+                    <p className="add-product-drop-zone-text">Drag & drop detail images here</p>
                     <p className="add-product-drop-zone-subtext">or</p>
                     <div className="add-product-browse-btn">
                       Browse Files
@@ -444,28 +717,33 @@ const ProductForm = () => {
                       multiple
                       onChange={(e) => handleFileSelect(e, 'additional')}
                       hidden
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
 
-                {/* Other Images Grid */}
-                {formData.otherImages.length > 0 && (
+                {errors.detail_images && (
+                  <span className="add-product-error-text">{errors.detail_images}</span>
+                )}
+
+                {formData.detail_images.length > 0 && (
                   <>
                     <div className="add-product-helper-text" style={{marginTop: '1rem'}}>
-                      {formData.otherImages.length} additional image(s) uploaded
+                      {formData.detail_images.length} detail image(s) uploaded
                     </div>
                     <div className="add-product-other-images-grid">
-                      {formData.otherImages.map((image, index) => (
+                      {formData.detail_images.map((image, index) => (
                         <div key={index} className="add-product-image-preview other-image">
                           <img 
                             src={URL.createObjectURL(image)} 
-                            alt={`Product preview ${index + 1}`} 
+                            alt={`Product detail ${index + 1}`} 
                           />
                           <div className="add-product-image-actions">
                             <button 
                               type="button" 
                               className="add-product-btn-primary"
                               onClick={() => setAsMainImage(image, index)}
+                              disabled={isSubmitting}
                             >
                               Set as Main
                             </button>
@@ -473,6 +751,7 @@ const ProductForm = () => {
                               type="button" 
                               className="add-product-btn-danger"
                               onClick={() => removeOtherImage(index)}
+                              disabled={isSubmitting}
                             >
                               Remove
                             </button>
@@ -487,7 +766,6 @@ const ProductForm = () => {
           </div>
         </div>
 
-        {/* Form Actions */}
         <div className="add-product-form-actions">
           <button 
             type="button" 
@@ -505,7 +783,7 @@ const ProductForm = () => {
             {isSubmitting ? (
               <>
                 <span className="add-product-spinner"></span>
-                Creating...
+                Creating Product...
               </>
             ) : (
               'Create Product'

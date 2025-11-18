@@ -1,13 +1,11 @@
-// pages/main/AddProduct.js
 import React, { useState } from 'react';
+import '../../../styles/CategoryForm.css';
+import Header from '../Header';
+import Sidebar from '../Sidebar';
+import SettingsPanel from '../../../component/SettingsPanel';
+import CategoryForm from './CategoryForm';
 
-import '../../styles/AddProduct.css';
-import ProductForm from './ProductForm';
-import Header from './Header';
-import Sidebar from './Sidebar';
-import SettingsPanel from '../../component/SettingsPanel';
-
-const AddProduct = () => {
+const AddCategory = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -37,7 +35,7 @@ const AddProduct = () => {
                 onToggleSidebar={toggleSidebar}
                 onSettingsClick={() => setSettingsOpen(true)} 
               />
-              <ProductForm />
+              <CategoryForm />
               <div className="bottom-page">
                 <div className="body-text">Copyright © 2025 Remos. Design with</div>
                 <i className="icon-heart"></i>
@@ -53,4 +51,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default AddCategory;

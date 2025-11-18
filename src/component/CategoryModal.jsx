@@ -6,8 +6,6 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, category }) => {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    description: '',
-    status: 'active'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -15,16 +13,12 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, category }) => {
     if (category) {
       setFormData({
         name: category.name || '',
-        slug: category.slug || '',
-        description: category.description || '',
-        status: category.status || 'active'
+        slug: category.slug || ''
       });
     } else {
       setFormData({
         name: '',
         slug: '',
-        description: '',
-        status: 'active'
       });
     }
   }, [category, isOpen]);
@@ -112,35 +106,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, category }) => {
               URL-friendly version. Use lowercase letters, numbers, and hyphens only.
             </p>
           </div>
-          
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Category description..."
-              rows="3"
-              className="form-textarea"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                name="status"
-                checked={formData.status === 'active'}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  status: e.target.checked ? 'active' : 'inactive'
-                }))}
-              />
-              <span className="checkmark"></span>
-              Active Category
-            </label>
-          </div>
-          
+
           <div className="modal-actions">
             <button 
               type="button" 

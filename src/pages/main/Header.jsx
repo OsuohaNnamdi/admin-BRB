@@ -1,6 +1,9 @@
 // components/Header.js
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/Header.css';
+import ApiService from '../../config/ApiService';
+import { useAlert } from '../../context/alert/AlertContext';
 
 const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [showSearch, setShowSearch] = useState(false);
@@ -8,7 +11,15 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [showMessages, setShowMessages] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   const searchRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const messagesRef = useRef(null);
+  const userMenuRef = useRef(null);
+  
+  const navigate = useNavigate();
+  const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,13 +35,49 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close search dropdown
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
+      }
+      
+      // Close notifications dropdown
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      
+      // Close messages dropdown
+      if (messagesRef.current && !messagesRef.current.contains(event.target)) {
+        setShowMessages(false);
+      }
+      
+      // Close user menu dropdown
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  // Close dropdowns when pressing Escape key
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        setShowSearch(false);
+        setShowNotifications(false);
+        setShowMessages(false);
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
   }, []);
 
   // Close other dropdowns when one opens
@@ -38,12 +85,75 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     setShowNotifications(dropdownName === 'notifications');
     setShowMessages(dropdownName === 'messages');
     setShowUserMenu(dropdownName === 'user');
+    setShowSearch(dropdownName === 'search');
   };
 
   const handleHamburgerClick = () => {
     if (onToggleSidebar) {
       onToggleSidebar();
     }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    const loadingAlertId = showLoading('Signing out...', 'Logout');
+
+    try {
+      // Call logout API
+      await ApiService.adminLogout();
+      
+      // Remove loading alert and show success
+      removeAlert(loadingAlertId);
+      showSuccess('You have been successfully logged out.', 'Goodbye!');
+      
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Logout failed:', error);
+      removeAlert(loadingAlertId);
+      
+      // Even if logout API fails, clear local token and redirect
+      await ApiService.removeToken();
+      
+      showError(
+        'There was an issue during logout, but you have been signed out locally.',
+        'Logout Warning',
+        { duration: 4000 }
+      );
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } finally {
+      setIsLoggingOut(false);
+      setShowUserMenu(false);
+    }
+  };
+
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    setShowUserMenu(false);
+    navigate('/profile');
+  };
+
+  const handleViewAllNotifications = (e) => {
+    e.preventDefault();
+    setShowNotifications(false);
+    navigate('/notifications');
+  };
+
+  const handleViewAllMessages = (e) => {
+    e.preventDefault();
+    setShowMessages(false);
+    navigate('/messages');
+  };
+
+  const handleQuickLinkClick = (path) => {
+    setShowSearch(false);
+    navigate(path);
   };
 
   return (
@@ -74,7 +184,7 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                 type="text"
                 placeholder="Search products, orders, customers..."
                 className="admin-search-input"
-                onFocus={() => setShowSearch(true)}
+                onFocus={() => openDropdown('search')}
               />
             </div>
 
@@ -83,18 +193,37 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
               <div className="admin-search-results">
                 <div className="admin-search-section">
                   <h4 className="admin-section-title">Quick Links</h4>
-                  <div className="admin-search-item">
+                  <div 
+                    className="admin-search-item"
+                    onClick={() => handleQuickLinkClick('/')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="admin-menu-icon">📊</div>
                     <div className="admin-product-info">
                       <span className="admin-product-name">View Analytics Dashboard</span>
                       <span className="admin-product-category">Dashboard</span>
                     </div>
                   </div>
-                  <div className="admin-search-item">
+                  <div 
+                    className="admin-search-item"
+                    onClick={() => handleQuickLinkClick('/product')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="admin-menu-icon">🛍️</div>
                     <div className="admin-product-info">
                       <span className="admin-product-name">Manage Products</span>
                       <span className="admin-product-category">Products</span>
+                    </div>
+                  </div>
+                  <div 
+                    className="admin-search-item"
+                    onClick={() => handleQuickLinkClick('/category')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="admin-menu-icon">📁</div>
+                    <div className="admin-product-info">
+                      <span className="admin-product-name">Manage Categories</span>
+                      <span className="admin-product-category">Categories</span>
                     </div>
                   </div>
                 </div>
@@ -106,10 +235,11 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
         {/* Right Section */}
         <div className="admin-header-right">
           {/* Notifications */}
-          <div className="admin-header-item admin-dropdown-container">
+          <div className="admin-header-item admin-dropdown-container" ref={notificationsRef}>
             <button 
               className="admin-icon-button admin-notification-button"
               onClick={() => openDropdown('notifications')}
+              disabled={isLoggingOut}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                 <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L14 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
@@ -142,17 +272,23 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                   </div>
                 </div>
                 <div className="admin-dropdown-footer">
-                  <a href="/notifications" className="admin-view-all">View all notifications</a>
+                  <button 
+                    className="admin-view-all"
+                    onClick={handleViewAllNotifications}
+                  >
+                    View all notifications
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
           {/* Messages */}
-          <div className="admin-header-item admin-dropdown-container">
+          <div className="admin-header-item admin-dropdown-container" ref={messagesRef}>
             <button 
               className="admin-icon-button admin-message-button"
               onClick={() => openDropdown('messages')}
+              disabled={isLoggingOut}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                 <path d="M2 2a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H2zm12 1a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1h12zM3 5.5a.5.5 0 01.5-.5h9a.5.5 0 010 1h-9a.5.5 0 01-.5-.5zM3 8a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5A.5.5 0 013 8z"/>
@@ -181,17 +317,23 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                   </div>
                 </div>
                 <div className="admin-dropdown-footer">
-                  <a href="/messages" className="admin-view-all">View all messages</a>
+                  <button 
+                    className="admin-view-all"
+                    onClick={handleViewAllMessages}
+                  >
+                    View all messages
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
           {/* User Menu */}
-          <div className="admin-header-item admin-dropdown-container">
+          <div className="admin-header-item admin-dropdown-container" ref={userMenuRef}>
             <button 
               className="admin-user-menu-button"
               onClick={() => openDropdown('user')}
+              disabled={isLoggingOut}
             >
               <div className="admin-user-avatar">
                 <div className="admin-avatar-placeholder">KW</div>
@@ -217,23 +359,27 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                   </div>
                 </div>
                 <div className="admin-dropdown-content">
-                  <a href="/profile" className="admin-menu-item">
+                  <button 
+                    className="admin-menu-item"
+                    onClick={handleProfileClick}
+                  >
                     <span className="admin-menu-icon">👤</span>
                     <span className="admin-menu-text">Profile</span>
-                  </a>
-                  <a href="/settings" className="admin-menu-item">
-                    <span className="admin-menu-icon">⚙️</span>
-                    <span className="admin-menu-text">Settings</span>
-                  </a>
-                  <a href="/billing" className="admin-menu-item">
-                    <span className="admin-menu-icon">💳</span>
-                    <span className="admin-menu-text">Billing</span>
-                  </a>
+                  </button>
+                  
                   <div className="admin-menu-divider" />
-                  <a href="/logout" className="admin-menu-item admin-danger">
-                    <span className="admin-menu-icon">🚪</span>
-                    <span className="admin-menu-text">Logout</span>
-                  </a>
+                  <button 
+                    className="admin-menu-item admin-danger"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    <span className="admin-menu-icon">
+                      {isLoggingOut ? '⏳' : '🚪'}
+                    </span>
+                    <span className="admin-menu-text">
+                      {isLoggingOut ? 'Logging out...' : 'Logout'}
+                    </span>
+                  </button>
                 </div>
               </div>
             )}

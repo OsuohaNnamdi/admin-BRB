@@ -616,3 +616,88 @@
   content: "❌";
   font-style: normal;
 }
+/* Add these to your existing AddProduct.css */
+
+.add-product-success-message {
+  background-color: #f0fff4;
+  border: 1px solid #9ae6b4;
+  color: #2d7d46;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.add-product-error-message {
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.add-product-error-text {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+.add-product-input.error,
+.add-product-select.error,
+.add-product-textarea.error,
+.add-product-drop-zone.error {
+  border-color: #dc3545 !important;
+}
+
+.add-product-input.error:focus,
+.add-product-select.error:focus,
+.add-product-textarea.error:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.success-icon,
+.error-icon {
+  font-size: 16px;
+}
+
+.add-product-btn-primary:disabled,
+.add-product-btn-secondary:disabled,
+.add-product-generate-btn:disabled,
+.add-product-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-product-input:disabled,
+.add-product-select:disabled,
+.add-product-textarea:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Loading spinner */
+.add-product-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

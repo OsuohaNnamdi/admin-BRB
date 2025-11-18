@@ -332,3 +332,58 @@
     align-self: flex-end;
   }
 }
+/* Add these to your existing Auth.css */
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.demo-button {
+  background: transparent !important;
+  border: 1px dashed #ccc !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  color: #666 !important;
+  margin-bottom: 16px !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  transition: all 0.3s ease !important;
+}
+
+.demo-button:hover {
+  border-color: #999 !important;
+  color: #333 !important;
+}
+
+.auth-button:disabled {
+  background-color: #ccc !important;
+  cursor: not-allowed !important;
+}
+
+.forgot-link:disabled,
+.auth-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.checkbox-input:disabled {
+  cursor: not-allowed;
+}
