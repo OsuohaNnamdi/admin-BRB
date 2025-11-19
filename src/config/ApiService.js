@@ -36,7 +36,15 @@ class ApiService {
     }
   }
 
-  // Admin Products Management
+  
+  async getProfile() {
+    return apiClient.get('/auth/profile/', {}, true);
+  }
+
+  async updateProfile(profileData) {
+    return this.put('/auth/profile/', profileData, true);
+  }
+
   async getAdminProducts() {
     return apiClient.get('/admin/products', {}, true);
   }

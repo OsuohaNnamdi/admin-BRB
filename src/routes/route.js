@@ -15,6 +15,8 @@ import CategoryList from "../pages/main/category/CategoryList.jsx";
 import ProductList from "../pages/main/product/ProductList.jsx";
 import ApiService from "../config/ApiService";
 import { useEffect, useState } from "react";
+import InventoryPage from "../pages/main/InventoryPage.jsx";
+import ProfilePage from "../pages/main/ProfilePage.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -135,6 +137,18 @@ const router = createBrowserRouter(
       <Route path="/add-category" element={
         <ProtectedLayout>
           <AddCategory />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/inventory" element={
+        <ProtectedLayout>
+          <InventoryPage />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/profile" element={
+        <ProtectedLayout>
+          <ProfilePage />
         </ProtectedLayout>
       } />
 

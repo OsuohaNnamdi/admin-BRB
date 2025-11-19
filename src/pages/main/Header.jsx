@@ -12,6 +12,7 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   
   const searchRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -32,25 +33,32 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Fetch user profile on component mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await ApiService.getProfile();
+        setUserProfile(response.data);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close search dropdown
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
       }
-      
-      // Close notifications dropdown
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
-      
-      // Close messages dropdown
       if (messagesRef.current && !messagesRef.current.contains(event.target)) {
         setShowMessages(false);
       }
-      
-      // Close user menu dropdown
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
@@ -99,14 +107,10 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     const loadingAlertId = showLoading('Signing out...', 'Logout');
 
     try {
-      // Call logout API
       await ApiService.adminLogout();
-      
-      // Remove loading alert and show success
       removeAlert(loadingAlertId);
       showSuccess('You have been successfully logged out.', 'Goodbye!');
       
-      // Redirect to login page after a short delay
       setTimeout(() => {
         navigate('/login');
       }, 1500);
@@ -114,8 +118,6 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     } catch (error) {
       console.error('Logout failed:', error);
       removeAlert(loadingAlertId);
-      
-      // Even if logout API fails, clear local token and redirect
       await ApiService.removeToken();
       
       showError(
@@ -139,21 +141,21 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     navigate('/profile');
   };
 
-  const handleViewAllNotifications = (e) => {
-    e.preventDefault();
-    setShowNotifications(false);
-    navigate('/notifications');
+  const getInitials = () => {
+    if (!userProfile) return 'U';
+    const first = userProfile.first_name?.charAt(0) || '';
+    const last = userProfile.last_name?.charAt(0) || '';
+    return (first + last).toUpperCase() || 'U';
   };
 
-  const handleViewAllMessages = (e) => {
-    e.preventDefault();
-    setShowMessages(false);
-    navigate('/messages');
+  const getFullName = () => {
+    if (!userProfile) return 'User';
+    return `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || 'User';
   };
 
-  const handleQuickLinkClick = (path) => {
-    setShowSearch(false);
-    navigate(path);
+  const getDisplayName = () => {
+    if (!userProfile) return 'Loading...';
+    return userProfile.first_name || userProfile.email?.split('@')[0] || 'User';
   };
 
   return (
@@ -161,7 +163,6 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
       <div className="admin-header-container">
         {/* Left Section */}
         <div className="admin-header-left">
-          {/* Hamburger Menu - Only visible on mobile */}
           {isMobile && (
             <button 
               className="admin-sidebar-toggle"
@@ -188,14 +189,13 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
               />
             </div>
 
-            {/* Search Results Dropdown */}
             {showSearch && (
               <div className="admin-search-results">
                 <div className="admin-search-section">
                   <h4 className="admin-section-title">Quick Links</h4>
                   <div 
                     className="admin-search-item"
-                    onClick={() => handleQuickLinkClick('/')}
+                   // onClick={() => handleQuickLinkClick('/')}
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="admin-menu-icon">📊</div>
@@ -206,24 +206,13 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                   </div>
                   <div 
                     className="admin-search-item"
-                    onClick={() => handleQuickLinkClick('/product')}
+                   // onClick={() => handleQuickLinkClick('/product')}
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="admin-menu-icon">🛍️</div>
                     <div className="admin-product-info">
                       <span className="admin-product-name">Manage Products</span>
                       <span className="admin-product-category">Products</span>
-                    </div>
-                  </div>
-                  <div 
-                    className="admin-search-item"
-                    onClick={() => handleQuickLinkClick('/category')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="admin-menu-icon">📁</div>
-                    <div className="admin-product-info">
-                      <span className="admin-product-name">Manage Categories</span>
-                      <span className="admin-product-category">Categories</span>
                     </div>
                   </div>
                 </div>
@@ -262,66 +251,10 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
                       <span className="admin-notification-time">2 min ago</span>
                     </div>
                   </div>
-                  <div className="admin-notification-item admin-unread">
-                    <div className="admin-notification-icon">⭐</div>
-                    <div className="admin-notification-content">
-                      <p className="admin-notification-title">New Product Review</p>
-                      <p className="admin-notification-message">Customer left a 5-star review</p>
-                      <span className="admin-notification-time">1 hour ago</span>
-                    </div>
-                  </div>
                 </div>
                 <div className="admin-dropdown-footer">
-                  <button 
-                    className="admin-view-all"
-                    onClick={handleViewAllNotifications}
-                  >
+                  <button className="admin-view-all">
                     View all notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Messages */}
-          <div className="admin-header-item admin-dropdown-container" ref={messagesRef}>
-            <button 
-              className="admin-icon-button admin-message-button"
-              onClick={() => openDropdown('messages')}
-              disabled={isLoggingOut}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                <path d="M2 2a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H2zm12 1a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1h12zM3 5.5a.5.5 0 01.5-.5h9a.5.5 0 010 1h-9a.5.5 0 01-.5-.5zM3 8a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5A.5.5 0 013 8z"/>
-              </svg>
-              <span className="admin-notification-badge">2</span>
-            </button>
-
-            {showMessages && (
-              <div className="admin-dropdown-menu admin-message-menu">
-                <div className="admin-dropdown-header">
-                  <h3>Messages</h3>
-                  <span className="admin-badge">2 unread</span>
-                </div>
-                <div className="admin-dropdown-content">
-                  <div className="admin-message-item admin-unread">
-                    <div className="admin-message-avatar">
-                      <div className="admin-avatar-placeholder">SJ</div>
-                    </div>
-                    <div className="admin-message-content">
-                      <div className="admin-message-header">
-                        <span className="admin-message-sender">Sarah Johnson</span>
-                        <span className="admin-message-time">5 min ago</span>
-                      </div>
-                      <p className="admin-message-preview">Hi, I have a question about my order...</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="admin-dropdown-footer">
-                  <button 
-                    className="admin-view-all"
-                    onClick={handleViewAllMessages}
-                  >
-                    View all messages
                   </button>
                 </div>
               </div>
@@ -336,10 +269,10 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
               disabled={isLoggingOut}
             >
               <div className="admin-user-avatar">
-                <div className="admin-avatar-placeholder">KW</div>
+                <div className="admin-avatar-placeholder">{getInitials()}</div>
               </div>
               <div className="admin-user-info">
-                <span className="admin-user-name">Kristin Watson</span>
+                <span className="admin-user-name">{getDisplayName()}</span>
                 <span className="admin-user-role">Administrator</span>
               </div>
               <svg className="admin-chevron" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -351,11 +284,11 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
               <div className="admin-dropdown-menu admin-user-menu">
                 <div className="admin-user-menu-header">
                   <div className="admin-user-avatar admin-large">
-                    <div className="admin-avatar-placeholder">KW</div>
+                    <div className="admin-avatar-placeholder">{getInitials()}</div>
                   </div>
                   <div className="admin-user-details">
-                    <span className="admin-user-name">Kristin Watson</span>
-                    <span className="admin-user-email">kristin@brbbeauty.com</span>
+                    <span className="admin-user-name">{getFullName()}</span>
+                    <span className="admin-user-email">{userProfile?.email || 'Loading...'}</span>
                   </div>
                 </div>
                 <div className="admin-dropdown-content">
