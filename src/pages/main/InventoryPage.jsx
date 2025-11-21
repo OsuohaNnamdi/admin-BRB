@@ -31,19 +31,20 @@ const InventoryPage = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
+  // API functions - Updated to use the correct endpoints
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await ApiService.getAdminProducts();
-      console.log('Products fetched:', response.data);
+      const response = await ApiService.getAdminInventory();
+      console.log('Inventory fetched:', response.data);
       
+      // Handle the response format from GET /api/v1/admin/inventory/
       const productsData = response.data.products || response.data || [];
       setProducts(productsData);
       setFilteredProducts(productsData);
       
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('Error fetching inventory:', error);
       showError(
         'Failed to load inventory. Please try again.',
         'Load Error',
@@ -63,61 +64,38 @@ const InventoryPage = () => {
     }
 
     try {
-      // You might want to create a specific API endpoint for product search
-      const response = await ApiService.getAdminProducts();
-      const allProducts = response.data.products || response.data || [];
+      // Use the search endpoint
+      const response = await ApiService.searchProducts(searchQuery);
       
-      const filtered = allProducts.filter(product => 
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      
-      setSearchedProducts(filtered.slice(0, 10)); // Limit to 10 results
+      // Handle search response format
+      const searchResults = response.data.products || response.data || [];
+      setSearchedProducts(searchResults.slice(0, 10)); // Limit to 10 results
     } catch (error) {
       console.error('Error searching products:', error);
-      setSearchedProducts([]);
+      // Fallback to client-side search if API fails
+      const filtered = products.filter(product => 
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchedProducts(filtered.slice(0, 10));
     }
   };
 
-  const updateStock = async (productId, newStock) => {
-    try {
-      const response = await ApiService.updateProduct(productId, { stock: newStock });
-      return response.data.product || response.data;
-    } catch (error) {
-      console.error('Error updating stock:', error);
-      throw error;
-    }
-  };
-
+  // Updated to use the inventory adjustment endpoint
   const adjustStock = async (productId, adjustment) => {
     try {
-      const product = products.find(p => p.id === productId);
-      if (!product) throw new Error('Product not found');
-
-      const currentStock = parseInt(product.stock) || 0;
-      const newStock = Math.max(0, currentStock + adjustment);
-
-      await updateStock(productId, newStock);
-      return newStock;
+      const response = await ApiService.adjustInventory(productId, adjustment);
+      
+      const updatedProduct = response.data;
+      return updatedProduct.stock;
     } catch (error) {
+      console.error('Error adjusting stock:', error);
       throw error;
     }
   };
 
   const addStock = async (productId, quantityToAdd) => {
-    try {
-      const product = products.find(p => p.id === productId);
-      if (!product) throw new Error('Product not found');
-
-      const currentStock = parseInt(product.stock) || 0;
-      const newStock = currentStock + parseInt(quantityToAdd);
-
-      await updateStock(productId, newStock);
-      return newStock;
-    } catch (error) {
-      throw error;
-    }
+    return await adjustStock(productId, parseInt(quantityToAdd));
   };
 
   useEffect(() => {
@@ -201,7 +179,10 @@ const InventoryPage = () => {
     }
   };
 
-  const handleQuickAdjust = async (productId, adjustment) => {
+  const handleQuickAdjust = async (productId, figure, stock) => {
+
+    const adjustment = stock + figure;
+
     try {
       const loadingAlertId = showLoading('Updating stock...', 'Processing');
       const newStock = await adjustStock(productId, adjustment);
@@ -237,12 +218,13 @@ const InventoryPage = () => {
   };
 
   const formatPrice = (price) => {
-    if (!price) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
+    if (!price) return '₦0.00';
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'NGN'
     }).format(price);
   };
+
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -304,19 +286,7 @@ const InventoryPage = () => {
                   </div>
                   
                   <div className="filter-controls">
-                    <select 
-                      className="filter-select"
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                    >
-                      <option value="">All Categories</option>
-                      {categories.map((category, index) => (
-                        <option key={index} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                    
+                       
                     <select 
                       className="filter-select"
                       value={stockFilter}
@@ -395,8 +365,6 @@ const InventoryPage = () => {
                         <thead>
                           <tr>
                             <th>Product</th>
-                            <th>SKU</th>
-                            <th>Category</th>
                             <th>Current Stock</th>
                             <th>Price</th>
                             <th>Stock Actions</th>
@@ -408,7 +376,7 @@ const InventoryPage = () => {
                               <td>
                                 <div className="product-info">
                                   <img 
-                                    src={product.main_image || product.image || 'https://via.placeholder.com/60x60'} 
+                                    src={product.main_image_url || product.main_image || product.image || 'https://via.placeholder.com/60x60'} 
                                     alt={product.name}
                                     className="product-image"
                                     onError={(e) => {
@@ -417,20 +385,11 @@ const InventoryPage = () => {
                                   />
                                   <div className="product-details">
                                     <div className="product-name">{product.name || 'Unnamed Product'}</div>
-                                    <div className="product-slug">/{product.slug || 'no-slug'}</div>
+                                    
                                   </div>
                                 </div>
                               </td>
-                              <td>
-                                <span className="sku-badge">
-                                  {product.sku || 'N/A'}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="category-badge">
-                                  {getCategoryName(product)}
-                                </span>
-                              </td>
+                             
                               <td>
                                 <span className={`stock-badge ${getStockBadge(product.stock)}`}>
                                   {getStockText(product.stock)}
@@ -443,7 +402,7 @@ const InventoryPage = () => {
                                 <div className="stock-actions">
                                   <button 
                                     className="stock-btn minus-btn"
-                                    onClick={() => handleQuickAdjust(product.id, -1)}
+                                    onClick={() => handleQuickAdjust(product.id, -1 , product.stock)}
                                     title="Reduce stock by 1"
                                     disabled={parseInt(product.stock) <= 0}
                                   >
@@ -454,7 +413,7 @@ const InventoryPage = () => {
                                   </span>
                                   <button 
                                     className="stock-btn plus-btn"
-                                    onClick={() => handleQuickAdjust(product.id, 1)}
+                                    onClick={() => handleQuickAdjust(product.id, 1, product.stock)}
                                     title="Add stock by 1"
                                   >
                                     +
@@ -544,14 +503,13 @@ const InventoryPage = () => {
                         onClick={() => handleProductSelect(product)}
                       >
                         <img 
-                          src={product.main_image || product.image || 'https://via.placeholder.com/40x40'} 
+                          src={product.main_image_url || product.main_image || product.image || 'https://via.placeholder.com/40x40'} 
                           alt={product.name}
                           className="product-thumb"
                         />
                         <div className="product-info">
                           <div className="product-name">{product.name}</div>
                           <div className="product-details">
-                            <span className="sku">SKU: {product.sku || 'N/A'}</span>
                             <span className="current-stock">Current: {product.stock || 0}</span>
                           </div>
                         </div>
@@ -569,14 +527,13 @@ const InventoryPage = () => {
                   </div>
                   <div className="selected-product-info">
                     <img 
-                      src={selectedProduct.main_image || selectedProduct.image || 'https://via.placeholder.com/50x50'} 
+                      src={selectedProduct.main_image_url || selectedProduct.main_image || selectedProduct.image || 'https://via.placeholder.com/50x50'} 
                       alt={selectedProduct.name}
                       className="product-image"
                     />
                     <div className="product-details">
                       <div className="product-name">{selectedProduct.name}</div>
                       <div className="product-meta">
-                        <span>SKU: {selectedProduct.sku || 'N/A'}</span>
                         <span>Current Stock: {selectedProduct.stock || 0}</span>
                       </div>
                     </div>

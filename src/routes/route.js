@@ -17,6 +17,8 @@ import ApiService from "../config/ApiService";
 import { useEffect, useState } from "react";
 import InventoryPage from "../pages/main/InventoryPage.jsx";
 import ProfilePage from "../pages/main/ProfilePage.jsx";
+import OrderList from "../pages/main/orders/OrderList.jsx";
+import SingleOrder from "../pages/main/orders/SingleOrder.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -143,6 +145,24 @@ const router = createBrowserRouter(
       <Route path="/inventory" element={
         <ProtectedLayout>
           <InventoryPage />
+        </ProtectedLayout>
+      } />
+
+      {/* <Route path="/order/:orderId" element={
+        <ProtectedLayout>
+          <SingleOrder />
+        </ProtectedLayout>
+      } /> */}
+
+      <Route path="/order" element={
+        <ProtectedLayout>
+          <SingleOrder />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/orders" element={
+        <ProtectedLayout>
+          <OrderList />
         </ProtectedLayout>
       } />
 

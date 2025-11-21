@@ -36,6 +36,8 @@ const ProfilePage = () => {
       const response = await ApiService.getProfile();
   
       const profileData = response.data;
+      console.log('Profile data received:', profileData);
+      
       setProfile({
         first_name: profileData.first_name || '',
         last_name: profileData.last_name || '',
@@ -56,15 +58,47 @@ const ProfilePage = () => {
     }
   };
 
-  // Update profile
+  // Update profile - matches API requirements exactly
   const updateProfile = async (profileData) => {
     try {
-      // You'll need to create this method in ApiService
-      const response = await ApiService.updateProfile(profileData);
-      console.log('Profile updated:', response.data);
+      console.log('Updating profile with data:', profileData);
+      
+      // Prepare the data exactly as the API expects
+      const updateData = {
+        first_name: profileData.first_name.trim(),
+        last_name: profileData.last_name.trim(),
+        email: profileData.email.trim(),
+        phone: profileData.phone ? profileData.phone.trim() : '',
+        birth_date: profileData.birth_date || null
+      };
+
+      // Remove empty strings and set to null if required by API
+      if (updateData.phone === '') {
+        updateData.phone = null;
+      }
+      if (updateData.birth_date === '') {
+        updateData.birth_date = null;
+      }
+
+      console.log('Sending to API:', updateData);
+      
+      const response = await ApiService.updateProfile(updateData);
+      console.log('Profile update response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error updating profile:', error);
+      
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      
       throw error;
     }
   };
@@ -134,12 +168,20 @@ const ProfilePage = () => {
     const loadingAlertId = showLoading('Updating profile...', 'Saving');
 
     try {
-      await updateProfile(profile);
+      const updatedProfile = await updateProfile(profile);
       removeAlert(loadingAlertId);
       showSuccess('Profile updated successfully!', 'Profile Saved');
       
-      // Refresh profile data to ensure we have the latest
-      await fetchProfile();
+      // Update local state with the response data
+      if (updatedProfile) {
+        setProfile({
+          first_name: updatedProfile.first_name || '',
+          last_name: updatedProfile.last_name || '',
+          email: updatedProfile.email || '',
+          phone: updatedProfile.phone || '',
+          birth_date: updatedProfile.birth_date || ''
+        });
+      }
       
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -150,19 +192,36 @@ const ProfilePage = () => {
         let errorMessage = 'Failed to update profile. ';
         
         // Format backend errors
-        Object.keys(backendErrors).forEach(key => {
-          if (Array.isArray(backendErrors[key])) {
-            errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
-          } else {
-            errorMessage += `${key}: ${backendErrors[key]} `;
-          }
-        });
+        if (typeof backendErrors === 'object') {
+          Object.keys(backendErrors).forEach(key => {
+            if (Array.isArray(backendErrors[key])) {
+              errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
+            } else if (typeof backendErrors[key] === 'string') {
+              errorMessage += `${backendErrors[key]} `;
+            } else {
+              errorMessage += `${key}: ${JSON.stringify(backendErrors[key])} `;
+            }
+          });
+        } else if (typeof backendErrors === 'string') {
+          errorMessage = backendErrors;
+        }
         
         showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
+        
+        // Set form errors if available
+        if (error.response.data.errors) {
+          setErrors(error.response.data.errors);
+        }
       } else if (error.response?.status === 400) {
         showError('Invalid profile data. Please check all fields.', 'Validation Error', { duration: 5000 });
       } else if (error.response?.status === 401) {
         showError('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
+      } else if (error.response?.status === 403) {
+        showError('You do not have permission to update this profile.', 'Access Denied', { duration: 5000 });
+      } else if (error.response?.status === 404) {
+        showError('Profile not found.', 'Not Found', { duration: 5000 });
+      } else if (error.message === 'Network Error') {
+        showError('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
       } else {
         showError('Failed to update profile. Please try again.', 'Update Failed', { duration: 5000 });
       }
@@ -189,6 +248,7 @@ const ProfilePage = () => {
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
+    // Handle both ISO date strings and YYYY-MM-DD format
     return dateString.split('T')[0];
   };
 
@@ -266,6 +326,7 @@ const ProfilePage = () => {
                                 onChange={handleInputChange}
                                 className={errors.first_name ? 'error' : ''}
                                 placeholder="Enter your first name"
+                                disabled={saving}
                               />
                               {errors.first_name && (
                                 <span className="error-message">{errors.first_name}</span>
@@ -282,6 +343,7 @@ const ProfilePage = () => {
                                 onChange={handleInputChange}
                                 className={errors.last_name ? 'error' : ''}
                                 placeholder="Enter your last name"
+                                disabled={saving}
                               />
                               {errors.last_name && (
                                 <span className="error-message">{errors.last_name}</span>
@@ -300,6 +362,7 @@ const ProfilePage = () => {
                                 onChange={handleInputChange}
                                 className={errors.email ? 'error' : ''}
                                 placeholder="Enter your email address"
+                                disabled={saving}
                               />
                               {errors.email && (
                                 <span className="error-message">{errors.email}</span>
@@ -316,6 +379,7 @@ const ProfilePage = () => {
                                 onChange={handleInputChange}
                                 className={errors.phone ? 'error' : ''}
                                 placeholder="Enter your phone number"
+                                disabled={saving}
                               />
                               {errors.phone && (
                                 <span className="error-message">{errors.phone}</span>
@@ -332,6 +396,7 @@ const ProfilePage = () => {
                               value={formatDateForInput(profile.birth_date)}
                               onChange={handleInputChange}
                               className={errors.birth_date ? 'error' : ''}
+                              disabled={saving}
                             />
                             {errors.birth_date && (
                               <span className="error-message">{errors.birth_date}</span>

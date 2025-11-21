@@ -6,6 +6,7 @@ import SettingsPanel from '../../../component/SettingsPanel';
 import ProductModal from '../../../component/ProductModal';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -56,6 +57,8 @@ const ProductList = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   const fetchCategories = async () => {
     setCategoriesLoading(true);
     try {
@@ -92,9 +95,32 @@ const ProductList = () => {
     }
   };
 
+  // UPDATED: Update product with correct data structure
   const updateProduct = async (id, productData) => {
     try {
-      const response = await ApiService.updateProduct(id, productData);
+      // Prepare the data according to API requirements
+      const updateData = {
+        name: productData.name,
+        slug: productData.slug,
+        description: productData.description || '',
+        price: productData.price,
+        stock: productData.stock,
+        is_active: productData.is_active,
+        category_id: productData.category_id // Use category_id instead of category object
+      };
+
+      // Handle images if provided
+      if (productData.main_image) {
+        updateData.main_image = productData.main_image;
+      }
+      
+      if (productData.detail_images && productData.detail_images.length > 0) {
+        updateData.detail_images = productData.detail_images;
+      }
+
+      console.log('Updating product with data:', updateData);
+      
+      const response = await ApiService.updateProduct(id, updateData);
       console.log('Product updated:', response.data);
       return response.data.product || response.data;
     } catch (error) {
@@ -119,7 +145,13 @@ const ProductList = () => {
   }, []);
 
   const handleEdit = (product) => {
-    setSelectedProduct(product);
+    // Transform product data for the modal
+    const productForEdit = {
+      ...product,
+      // Ensure category_id is set for the modal
+      category_id: product.category?.id || product.category_id || ''
+    };
+    setSelectedProduct(productForEdit);
     setModalOpen(true);
   };
 
@@ -133,18 +165,39 @@ const ProductList = () => {
     setModalOpen(true);
   };
 
+  // UPDATED: Handle modal submit with proper data transformation
   const handleModalSubmit = async (productData) => {
     try {
       let loadingAlertId = showLoading('Saving product...', 'Processing');
       
+      // Prepare data according to API requirements
+      const submitData = {
+        name: productData.name,
+        slug: productData.slug,
+        description: productData.description || '',
+        price: productData.price,
+        stock: productData.stock,
+        is_active: productData.is_active,
+        category_id: productData.category_id // Use category_id directly
+      };
+
+      // Handle images
+      if (productData.main_image) {
+        submitData.main_image = productData.main_image;
+      }
+      
+      if (productData.detail_images && productData.detail_images.length > 0) {
+        submitData.detail_images = productData.detail_images;
+      }
+
       if (selectedProduct) {
         // Update existing product
-        await updateProduct(selectedProduct.id, productData);
+        await updateProduct(selectedProduct.id, submitData);
         removeAlert(loadingAlertId);
         showSuccess('Product updated successfully!', 'Update Successful');
       } else {
         // Create new product
-        await createProduct(productData);
+        await createProduct(submitData);
         removeAlert(loadingAlertId);
         showSuccess('Product created successfully!', 'Create Successful');
       }
@@ -326,7 +379,7 @@ const ProductList = () => {
                   </div>
                   <button 
                     className="add-product-btn"
-                    onClick={handleAdd}
+                    onClick={() => navigate("/add-product")}
                   >
                     <span>+ Add Product</span>
                   </button>
@@ -462,7 +515,7 @@ const ProductList = () => {
                               <td>
                                 <div className="product-info">
                                   <img 
-                                    src={product.main_image || product.image || 'https://via.placeholder.com/60x60'} 
+                                    src={product.main_image_url} 
                                     alt={product.name}
                                     className="product-image"
                                     onError={(e) => {
@@ -556,7 +609,7 @@ const ProductList = () => {
         }}
         onSubmit={handleModalSubmit}
         product={selectedProduct}
-        categories={categories}
+        categories={categories} // Make sure this is passed
       />
       
       {/* Delete Confirmation Modal */}

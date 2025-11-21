@@ -42,7 +42,7 @@ class ApiService {
   }
 
   async updateProfile(profileData) {
-    return this.put('/auth/profile/', profileData, true);
+    return apiClient.put('/auth/profile/', profileData, true);
   }
 
   async getAdminProducts() {
@@ -62,11 +62,11 @@ async createProduct(productData) {
 }
 
   async updateProduct(id, productData) {
-    return apiClient.put(`/admin/products/${id}`, productData, {}, true);
+    return apiClient.put(`/admin/products/${id}/`, productData, {}, true);
   }
 
   async deleteProduct(id) {
-    return apiClient.delete(`/admin/products/${id}`, {}, true);
+    return apiClient.delete(`/admin/products/${id}/`, {}, true);
   }
 
   // Admin Categories Management
@@ -87,24 +87,30 @@ async createProduct(productData) {
     return apiClient.delete(`/admin/categories/${id}`, {}, true);
   }
 
-  // Admin Orders Management
-  async getAdminOrders(filters = {}) {
-    const queryParams = new URLSearchParams(filters).toString();
-    const url = queryParams ? `/admin/orders?${queryParams}` : '/admin/orders';
-    return apiClient.get(url, {}, true);
-  }
+  async getAdminOrders() {
+    return apiClient.get('/admin/orders/', {}, true);
+  };
 
-  async updateOrder(id, orderData) {
-    return apiClient.put(`/admin/orders/${id}`, orderData, {}, true);
-  }
+  async getAdminOrder  (orderId)  {
+    return apiClient.get(`/admin/orders/${orderId}/`, {}, true);
+  };
+
+  async updateOrderStatus  (orderId, statusData)  {
+    return apiClient.put(`/admin/orders/${orderId}/`, statusData,{}, true);
+  };
 
   // Admin Inventory Management
   async getAdminInventory() {
-    return apiClient.get('/admin/inventory', {}, true);
+    return apiClient.get('/admin/inventory/', {}, true);
   }
 
-  async adjustInventory(adjustmentData) {
-    return apiClient.put('/admin/inventory/adjust', adjustmentData, {}, true);
+
+  async adjustInventory(productId, adjustment) {
+    const adjustmentData = {
+      product_id: productId,
+      adjustment: adjustment
+    };
+    return apiClient.put('/admin/inventory/adjust/', adjustmentData, {}, true);
   }
 
   // Admin Dashboard
