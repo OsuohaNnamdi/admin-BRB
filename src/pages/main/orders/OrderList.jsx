@@ -6,16 +6,26 @@ import SettingsPanel from '../../../component/SettingsPanel';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
 import { useNavigate } from 'react-router-dom';
+import { useOrder } from '../../../context/OrderContext';
 
 const OrderList = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
+  const {
+    orders,
+    loading,
+    selectOrder,
+    updateOrders,
+    updateOrderStatus,
+    setLoading
+  } = useOrder();
+  
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -25,9 +35,7 @@ const OrderList = () => {
     setSidebarOpen(false);
   };
 
-  const navigate = useNavigate();
-
-  // API functions - Updated to match the correct endpoint
+  // API functions - Updated to use context
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -36,7 +44,7 @@ const OrderList = () => {
       
       // Handle different response formats
       const ordersData = response.data.orders || response.data || [];
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      updateOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (error) {
       console.error('Error fetching orders:', error);
       showError(
@@ -44,14 +52,14 @@ const OrderList = () => {
         'Load Error',
         { duration: 5000 }
       );
-      setOrders([]);
+      updateOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Updated to match the API endpoint structure
-  const updateOrderStatus = async (orderId, newStatus) => {
+  // Updated to match the API endpoint structure and update context
+  const updateOrderStatusAPI = async (orderId, newStatus) => {
     try {
       const loadingAlertId = showLoading('Updating order status...', 'Processing');
       
@@ -61,13 +69,19 @@ const OrderList = () => {
       };
       
       await ApiService.updateOrderStatus(orderId, statusData);
+      
+      // Update the order status in context
+      updateOrderStatus(orderId, newStatus);
+      
       removeAlert(loadingAlertId);
       showSuccess('Order status updated successfully!', 'Update Successful');
-      await fetchOrders(); // Refresh the list
+       if (loadingAlertId) {
+      removeAlert(loadingAlertId);
+    }
     } catch (error) {
       console.error('Error updating order status:', error);
       handleUpdateError(error);
-    }
+    } 
   };
 
   const handleUpdateError = (error) => {
@@ -97,6 +111,15 @@ const OrderList = () => {
     } else {
       showError('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
     }
+  };
+
+  // Handle view order - using context instead of URL parameters
+  const handleViewOrder = (order) => {
+    // Store order in context
+    selectOrder(order);
+    
+    // Navigate to single order page
+    navigate('/order');
   };
 
   useEffect(() => {
@@ -166,20 +189,6 @@ const OrderList = () => {
     return statusMap[status?.toLowerCase()] || 'pending';
   };
 
-  const getStatusOptions = (currentStatus) => {
-    const statusFlow = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['processing', 'cancelled'],
-      processing: ['shipped', 'cancelled'],
-      shipped: ['delivered', 'completed'],
-      delivered: ['completed'],
-      completed: [],
-      cancelled: [],
-      refunded: []
-    };
-    return statusFlow[currentStatus] || [];
-  };
-
   const formatPrice = (price) => {
     if (!price) return '$0.00';
     return new Intl.NumberFormat('en-US', {
@@ -201,7 +210,7 @@ const OrderList = () => {
 
   const handleStatusChange = async (orderId, currentStatus, newStatus) => {
     if (newStatus !== currentStatus) {
-      await updateOrderStatus(orderId, newStatus);
+      await updateOrderStatusAPI(orderId, newStatus);
     }
   };
 
@@ -395,7 +404,7 @@ const OrderList = () => {
                               <tr key={order.id}>
                                 <td>
                                   <div className="order-id">
-                                    #{order.order_number || order.id}
+                                    ORD-{order.id.toString().padStart(4, '0')}
                                   </div>
                                 </td>
                                 <td>
@@ -463,8 +472,7 @@ const OrderList = () => {
                                   <div className="action-buttons">
                                     <button 
                                       className="action-btn view-btn"
-                                       onClick={() => navigate(`/order`)}
-                                      // onClick={() => navigate(`/order/${order.id}`)}
+                                      onClick={() => handleViewOrder(order)}
                                       title="View order details"
                                     >
                                       👁️
@@ -533,8 +541,7 @@ const OrderList = () => {
                               </div>
                               <button 
                                 className="action-btn view-btn"
-                                 onClick={() => navigate(`/order`)}
-                                // onClick={() => navigate(`/order/${order.id}`)}
+                                onClick={() => handleViewOrder(order)}
                                 title="View order details"
                               >
                                 View Details

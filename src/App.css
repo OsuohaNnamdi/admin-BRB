@@ -1,0 +1,86 @@
+/* components/Dashboard.css */
+.__variable_9eb1a5.body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.menu-style {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  z-index: 1000;
+}
+
+.layout-width {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+#wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#page {
+  flex: 1;
+  display: flex;
+  padding-top: 4px;
+}
+
+.layout-wrap {
+  display: flex;
+  min-height: calc(100vh - 4px);
+  width: 100%;
+}
+
+.section-content-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.bottom-page {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.bottom-page .icon-heart {
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.bottom-page a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.bottom-page a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .section-content-right {
+    margin-left: 0;
+  }
+  
+  .layout-wrap {
+    flex-direction: column;
+  }
+}

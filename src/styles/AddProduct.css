@@ -87,6 +87,15 @@
   margin-bottom: 0;
 }
 
+.section-content-right{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+  background: #f8fafc;
+}
+
 .add-product-label {
   display: block;
   font-size: 0.875rem;

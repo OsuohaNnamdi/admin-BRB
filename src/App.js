@@ -4,9 +4,11 @@ import router from "./routes/route";
 import "./App.css";
 import { AlertProvider } from "./context/alert/AlertContext";
 import AlertContainer from "./context/alert/AlertContainer";
+import { OrderProvider } from "./context/OrderContext";
 
 function App() {
   return (
+    <OrderProvider>
     <AlertProvider>
       <AuthProvider>
         <div className="App">
@@ -15,6 +17,7 @@ function App() {
         </div>
       </AuthProvider>
     </AlertProvider>
+    </OrderProvider>
   );
 }
 

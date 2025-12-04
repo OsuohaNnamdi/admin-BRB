@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../../styles/OrderList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import SettingsPanel from '../../../component/SettingsPanel';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
+import { useOrder } from '../../../context/OrderContext';
 
 const SingleOrder = () => {
-  // const { orderId } = useParams();
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
-
-  const orderId = 1;
-
-
+  const {
+    selectedOrder,
+    updateOrderStatus: updateOrderInContext,
+    clearSelectedOrder
+  } = useOrder();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -29,82 +29,95 @@ const SingleOrder = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchOrder = async () => {
-    setLoading(true);
-    try {
-      const response = await ApiService.getAdminOrder(orderId);
-      console.log('Order fetched:', response.data);
-      setOrder(response.data);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      showError(
-        'Failed to load order details. Please try again.',
-        'Load Error',
-        { duration: 5000 }
-      );
-      navigate('/orders');
-    } finally {
-      setLoading(false);
-    }
+  // Handle back navigation
+  const handleBack = () => {
+    clearSelectedOrder();
+    navigate('/orders');
   };
-
-  const updateOrderStatus = async (newStatus) => {
-    setUpdating(true);
-    try {
-      const loadingAlertId = showLoading('Updating order status...', 'Processing');
-      await ApiService.updateOrderStatus(orderId, { status: newStatus });
-      removeAlert(loadingAlertId);
-      showSuccess('Order status updated successfully!', 'Update Successful');
-      
-      // Update local state
-      setOrder(prev => ({ ...prev, status: newStatus }));
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      handleUpdateError(error);
-    } finally {
-      setUpdating(false);
-    }
-  };
+// Update order status - both in API and context
+const updateOrderStatus = async (newStatus) => {
+  if (!selectedOrder?.id) {
+    showError('No order selected', 'Error', { duration: 5000 });
+    return;
+  }
   
+  setUpdating(true);
+  try {
+    const loadingAlertId = showLoading('Updating order status...', 'Processing');
+    
+    // Update in API - Ensure proper data format
+    const statusData = {
+      status: newStatus
+    };
+    
+    console.log('Updating order status:', {
+      orderId: selectedOrder.id,
+      statusData: statusData
+    });
+    
+    await ApiService.updateOrderStatus(selectedOrder.id, statusData);
+    
+    // Update in context
+    updateOrderInContext(selectedOrder.id, newStatus);
+    
+    removeAlert(loadingAlertId);
+    showSuccess('Order status updated successfully!', 'Update Successful');
 
-  const handleUpdateError = (error) => {
-    if (error.response?.data) {
-      const backendErrors = error.response.data;
-      let errorMessage = 'Failed to update order. ';
-      
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
+    handleUpdateError(error);
+  } finally {
+    setUpdating(false);
+  }
+};
+
+const handleUpdateError = (error) => {
+  console.log('Full error object:', error);
+  
+  if (error.response?.data) {
+    const backendErrors = error.response.data;
+    let errorMessage = 'Failed to update order. ';
+    
+    // Check if backendErrors is an object
+    if (typeof backendErrors === 'object') {
       Object.keys(backendErrors).forEach(key => {
         if (Array.isArray(backendErrors[key])) {
           errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
-        } else {
+        } else if (typeof backendErrors[key] === 'string') {
           errorMessage += `${key}: ${backendErrors[key]} `;
+        } else {
+          errorMessage += `${key}: ${JSON.stringify(backendErrors[key])} `;
         }
       });
-      
-      showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
-    } else if (error.response?.status === 400) {
-      showError('Invalid status data.', 'Validation Error', { duration: 5000 });
-    } else if (error.response?.status === 401) {
-      showError('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
-    } else if (error.response?.status === 403) {
-      showError('You do not have permission to update orders.', 'Access Denied', { duration: 5000 });
-    } else if (error.response?.status === 404) {
-      showError('Order not found.', 'Not Found', { duration: 5000 });
-      navigate('/admin/orders');
-    } else if (error.message === 'Network Error') {
-      showError('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
-    } else {
-      showError('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
+    } else if (typeof backendErrors === 'string') {
+      errorMessage = backendErrors;
     }
-  };
-
-  useEffect(() => {
-    if (orderId) {
-      fetchOrder();
-    }
-  }, [orderId]);
+    
+    showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
+  } else if (error.response?.status === 400) {
+    showError('Bad request. Invalid status data.', 'Validation Error', { duration: 5000 });
+  } else if (error.response?.status === 404) {
+    showError('Order not found. The order may have been deleted.', 'Not Found', { duration: 5000 });
+    navigate('/orders');
+  } else if (error.message === 'Network Error') {
+    showError('Network error. Please check your internet connection.', 'Connection Error', { duration: 5000 });
+  } else if (error.code === 'ECONNABORTED') {
+    showError('Request timeout. Please try again.', 'Timeout Error', { duration: 5000 });
+  } else if (!error.response) {
+    showError('No response from server. Please check if the server is running.', 'Server Error', { duration: 5000 });
+  } else {
+    showError(`Failed to update order: ${error.message}`, 'Update Failed', { duration: 5000 });
+  }
+};
 
   const getStatusBadge = (status) => {
+    if (!status) return 'pending';
     const statusMap = {
       pending: 'pending',
       confirmed: 'confirmed',
@@ -124,8 +137,8 @@ const SingleOrder = () => {
     }).format(price);
   };
 
-
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -136,6 +149,7 @@ const SingleOrder = () => {
   };
 
   const getStatusOptions = (currentStatus) => {
+    if (!currentStatus) return [];
     const statusFlow = {
       pending: ['confirmed', 'cancelled'],
       confirmed: ['processing', 'cancelled'],
@@ -148,23 +162,35 @@ const SingleOrder = () => {
   };
 
   const getTotalItems = () => {
-    return order?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
+    if (!selectedOrder?.items) return 0;
+    return selectedOrder.items.reduce((total, item) => total + (item.quantity || 0), 0);
   };
 
   const getSubtotal = () => {
-    return order?.items?.reduce((total, item) => total + (parseFloat(item.unit_price) * item.quantity), 0) || 0;
+    if (!selectedOrder?.items) return 0;
+    return selectedOrder.items.reduce((total, item) => total + (parseFloat(item.unit_price || 0) * (item.quantity || 1)), 0);
   };
 
-  if (loading) {
+  // If no order is selected, show error
+  if (!selectedOrder) {
     return (
       <div className="__variable_9eb1a5 body">
-        <div className="loading-state full-page">
-          <div className="loading-spinner"></div>
-          <p>Loading order details...</p>
+        <div className="error-state full-page">
+          <div className="error-icon">❌</div>
+          <h3>No Order Selected</h3>
+          <p>Please select an order from the orders list.</p>
+          <button 
+            className="back-btn"
+            onClick={() => navigate('/orders')}
+          >
+            ← Back to Orders
+          </button>
         </div>
       </div>
     );
   }
+
+  const order = selectedOrder;
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -188,24 +214,18 @@ const SingleOrder = () => {
               <div className="single-order-container">
                 <div className="order-header">
                   <div className="header-left">
-                    <button 
-                      className="back-btn"
-                      onClick={() => navigate('/admin/orders')}
-                    >
-                      ← Back to Orders
-                    </button>
                     <div className="header-content">
-                      <h1>Order #{order.id}</h1>
-                      <p>Placed on {formatDate(order.created_at)}</p>
+                      <h1>Order #ORD-{order.id.toString().padStart(4, '0')}</h1>
+                      <p>Placed on {formatDate(order?.created_at)}</p>
                     </div>
                   </div>
                   <div className="header-actions">
                     <button 
                       className="refresh-btn"
-                      onClick={fetchOrder}
-                      title="Refresh order"
+                      onClick={handleBack}
+                      title="Go back to orders"
                     >
-                      🔄 Refresh
+                      ← Back
                     </button>
                   </div>
                 </div>
@@ -214,13 +234,13 @@ const SingleOrder = () => {
                   <div className="overview-card">
                     <div className="overview-item">
                       <span className="overview-label">Status</span>
-                      <span className={`status-badge large ${getStatusBadge(order.status)}`}>
-                        {order.status}
+                      <span className={`status-badge large ${getStatusBadge(order?.status)}`}>
+                        {order?.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
                       </span>
                     </div>
                     <div className="overview-item">
                       <span className="overview-label">Total Amount</span>
-                      <span className="overview-value total">{formatPrice(order.total)}</span>
+                      <span className="overview-value total">{formatPrice(order?.total_amount || order?.total || 0)}</span>
                     </div>
                     <div className="overview-item">
                       <span className="overview-label">Items</span>
@@ -228,7 +248,7 @@ const SingleOrder = () => {
                     </div>
                     <div className="overview-item">
                       <span className="overview-label">Last Updated</span>
-                      <span className="overview-value">{formatDate(order.updated_at)}</span>
+                      <span className="overview-value">{formatDate(order?.updated_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -245,21 +265,21 @@ const SingleOrder = () => {
                         <div className="col-total">Total</div>
                       </div>
                       <div className="table-body">
-                        {order.items?.map(item => (
+                        {order?.items?.map(item => (
                           <div key={item.id} className="table-row">
                             <div className="col-product">
                               <div className="product-info">
-                                <div className="product-name">{item.product_name}</div>
+                                <div className="product-name">{item.product_name || item.product?.name || 'Unknown Product'}</div>
                               </div>
                             </div>
                             <div className="col-price">
                               {formatPrice(item.unit_price)}
                             </div>
                             <div className="col-quantity">
-                              {item.quantity}
+                              {item.quantity || 1}
                             </div>
                             <div className="col-total">
-                              {formatPrice(parseFloat(item.unit_price) * item.quantity)}
+                              {formatPrice(parseFloat(item.unit_price || 0) * (item.quantity || 1))}
                             </div>
                           </div>
                         ))}
@@ -271,11 +291,11 @@ const SingleOrder = () => {
                         </div>
                         <div className="footer-row">
                           <span>Shipping:</span>
-                          <span>{formatPrice(0)}</span>
+                          <span>{formatPrice(order?.shipping_fee || 0)}</span>
                         </div>
                         <div className="footer-row total">
                           <span>Total:</span>
-                          <span>{formatPrice(order.total)}</span>
+                          <span>{formatPrice(order?.total_amount || order?.total || 0)}</span>
                         </div>
                       </div>
                     </div>
@@ -290,7 +310,7 @@ const SingleOrder = () => {
                         <select 
                           id="status-select"
                           className="status-select"
-                          value={order.status}
+                          value={order?.status || 'pending'}
                           onChange={(e) => updateOrderStatus(e.target.value)}
                           disabled={updating}
                         >
@@ -300,18 +320,19 @@ const SingleOrder = () => {
                           <option value="shipped">Shipped</option>
                           <option value="delivered">Delivered</option>
                           <option value="cancelled">Cancelled</option>
+                          <option value="completed">Completed</option>
                         </select>
                         {updating && <div className="updating-spinner"></div>}
                       </div>
                       <div className="status-help">
                         <p>Next available statuses:</p>
                         <div className="available-statuses">
-                          {getStatusOptions(order.status).map(status => (
+                          {getStatusOptions(order?.status).map(status => (
                             <span key={status} className="available-status">
                               {status}
                             </span>
                           ))}
-                          {getStatusOptions(order.status).length === 0 && (
+                          {getStatusOptions(order?.status).length === 0 && (
                             <span className="no-status">No further status changes available</span>
                           )}
                         </div>
@@ -323,22 +344,28 @@ const SingleOrder = () => {
                       <div className="info-grid">
                         <div className="info-item">
                           <span className="info-label">Order ID:</span>
-                          <span className="info-value">#{order.id}</span>
+                          <span className="info-value">#{order?.order_number || order?.id || 'N/A'}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Created:</span>
-                          <span className="info-value">{formatDate(order.created_at)}</span>
+                          <span className="info-value">{formatDate(order?.created_at)}</span>
                         </div>
                         <div className="info-item">
                           <span className="info-label">Last Updated:</span>
-                          <span className="info-value">{formatDate(order.updated_at)}</span>
+                          <span className="info-value">{formatDate(order?.updated_at)}</span>
                         </div>
                         <div className="info-item">
-                          <span className="info-label">Tracking Token:</span>
+                          <span className="info-label">Customer:</span>
                           <span className="info-value">
-                            {order.tracking_token || 'Not assigned'}
+                            {order?.customer_name || order?.customer?.name || order?.user?.name || 'N/A'}
                           </span>
                         </div>
+                        {order?.customer_email && (
+                          <div className="info-item">
+                            <span className="info-label">Email:</span>
+                            <span className="info-value">{order.customer_email}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -353,9 +380,9 @@ const SingleOrder = () => {
                         </button>
                         <button 
                           className="btn-secondary"
-                          onClick={fetchOrder}
+                          onClick={handleBack}
                         >
-                          Refresh Data
+                          Back to Orders
                         </button>
                       </div>
                     </div>
@@ -366,39 +393,39 @@ const SingleOrder = () => {
                 <div className="order-section">
                   <h3>Order Timeline</h3>
                   <div className="timeline">
-                    <div className={`timeline-item ${order.status === 'pending' ? 'active' : 'completed'}`}>
+                    <div className={`timeline-item ${order?.status === 'pending' ? 'active' : 'completed'}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Order Placed</h4>
-                        <p>{formatDate(order.created_at)}</p>
+                        <p>{formatDate(order?.created_at)}</p>
                       </div>
                     </div>
-                    <div className={`timeline-item ${order.status === 'confirmed' ? 'active' : order.status === 'pending' ? 'pending' : 'completed'}`}>
+                    <div className={`timeline-item ${order?.status === 'confirmed' ? 'active' : order?.status === 'pending' ? 'pending' : 'completed'}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Order Confirmed</h4>
-                        <p>Waiting for confirmation</p>
+                        <p>{order?.status === 'confirmed' ? 'Order confirmed' : 'Waiting for confirmation'}</p>
                       </div>
                     </div>
-                    <div className={`timeline-item ${order.status === 'processing' ? 'active' : ['pending', 'confirmed'].includes(order.status) ? 'pending' : 'completed'}`}>
+                    <div className={`timeline-item ${order?.status === 'processing' ? 'active' : ['pending', 'confirmed'].includes(order?.status) ? 'pending' : 'completed'}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Processing</h4>
-                        <p>Order being prepared</p>
+                        <p>{order?.status === 'processing' ? 'Order being prepared' : 'Not yet processing'}</p>
                       </div>
                     </div>
-                    <div className={`timeline-item ${order.status === 'shipped' ? 'active' : ['pending', 'confirmed', 'processing'].includes(order.status) ? 'pending' : 'completed'}`}>
+                    <div className={`timeline-item ${order?.status === 'shipped' ? 'active' : ['pending', 'confirmed', 'processing'].includes(order?.status) ? 'pending' : 'completed'}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Shipped</h4>
-                        <p>Order in transit</p>
+                        <p>{order?.status === 'shipped' ? 'Order in transit' : 'Not yet shipped'}</p>
                       </div>
                     </div>
-                    <div className={`timeline-item ${order.status === 'delivered' ? 'active' : order.status === 'cancelled' ? 'cancelled' : 'pending'}`}>
+                    <div className={`timeline-item ${order?.status === 'delivered' ? 'active' : order?.status === 'cancelled' ? 'cancelled' : 'pending'}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Delivered</h4>
-                        <p>Order completed</p>
+                        <p>{order?.status === 'delivered' ? 'Order completed' : order?.status === 'cancelled' ? 'Order cancelled' : 'Not yet delivered'}</p>
                       </div>
                     </div>
                   </div>

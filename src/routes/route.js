@@ -19,6 +19,7 @@ import InventoryPage from "../pages/main/InventoryPage.jsx";
 import ProfilePage from "../pages/main/ProfilePage.jsx";
 import OrderList from "../pages/main/orders/OrderList.jsx";
 import SingleOrder from "../pages/main/orders/SingleOrder.jsx";
+import ReviewList from "../pages/main/ReviewList.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -148,15 +149,16 @@ const router = createBrowserRouter(
         </ProtectedLayout>
       } />
 
-      {/* <Route path="/order/:orderId" element={
-        <ProtectedLayout>
+      {/* Note: SingleOrder uses PublicLayout because it might need to be accessible via direct link */}
+      <Route path="/order" element={
+        <ProtectedLayout> {/* Changed to ProtectedLayout since it's an admin order view */}
           <SingleOrder />
         </ProtectedLayout>
-      } /> */}
+      } />
 
-      <Route path="/order" element={
+      <Route path="/reviews" element={
         <ProtectedLayout>
-          <SingleOrder />
+          <ReviewList />
         </ProtectedLayout>
       } />
 

@@ -61,9 +61,17 @@ async createProduct(productData) {
   return apiClient.post('/admin/products/', productData, config, true);
 }
 
+  // Update product with PATCH method
   async updateProduct(id, productData) {
-    return apiClient.put(`/admin/products/${id}/`, productData, {}, true);
-  }
+  // For FormData, let the browser set the Content-Type with boundary
+  const config = productData instanceof FormData ? {} : {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+  
+  return apiClient.patch(`/admin/products/${id}/`, productData, config, true);
+}
 
   async deleteProduct(id) {
     return apiClient.delete(`/admin/products/${id}/`, {}, true);
@@ -96,7 +104,8 @@ async createProduct(productData) {
   };
 
   async updateOrderStatus  (orderId, statusData)  {
-    return apiClient.put(`/admin/orders/${orderId}/`, statusData,{}, true);
+   
+    return apiClient.patch(`/admin/orders/${orderId}/`, statusData,{}, true);
   };
 
   // Admin Inventory Management
@@ -112,6 +121,35 @@ async createProduct(productData) {
     };
     return apiClient.put('/admin/inventory/adjust/', adjustmentData, {}, true);
   }
+
+   // Admin Reviews Management
+  async getAdminReviews(params = {}) {
+    // Build query parameters
+    const queryParams = {};
+    
+    if (params.rating) queryParams.rating = params.rating;
+    if (params.product_id) queryParams.product_id = params.product_id;
+    if (params.user_id) queryParams.user_id = params.user_id;
+    if (params.search) queryParams.search = params.search;
+    if (params.date) queryParams.date = params.date;
+    if (params.page) queryParams.page = params.page;
+    if (params.page_size) queryParams.page_size = params.page_size;
+    
+    return apiClient.get('/admin/reviews/', queryParams, true);
+  }
+
+  async getReviewDetails(reviewId) {
+    return apiClient.get(`/admin/reviews/${reviewId}/`, {}, true);
+  }
+
+  async deleteReview(reviewId) {
+    return apiClient.delete(`/admin/reviews/${reviewId}/`, {}, true);
+  }
+
+  async updateReview(reviewId, reviewData) {
+    return apiClient.put(`/admin/reviews/${reviewId}/`, reviewData, {}, true);
+  }
+
 
   // Admin Dashboard
   async getAdminDashboard() {

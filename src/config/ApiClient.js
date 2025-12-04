@@ -143,6 +143,8 @@ post(url, data, config = {}, useToken = false) {
     return instance.put(url, data, config);
   }
 
+  
+
   patch(url, data, config = {}, useToken = false) {
     const instance = useToken ? this.axiosInstanceWithToken : this.axiosInstance;
     return instance.patch(url, data, config);

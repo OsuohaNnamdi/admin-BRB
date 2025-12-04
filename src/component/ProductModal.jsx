@@ -1,4 +1,3 @@
-// components/ProductModal.js
 import React, { useState, useEffect } from 'react';
 import '../styles/ProductModal.css';
 
@@ -230,7 +229,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
             </div>
             
             <div className="form-group">
-              <label className="form-label required">Price ($)</label>
+              <label className="form-label required">Price (₦)</label>
               <input
                 type="number"
                 name="price"
@@ -271,76 +270,6 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
             />
           </div>
 
-          {/* Main Image Upload */}
-          <div className="form-group">
-            <label className="form-label">Main Image</label>
-            <div className="image-upload-container">
-              <input
-                type="file"
-                id="main_image"
-                onChange={handleMainImageChange}
-                accept="image/*"
-                className="image-input"
-              />
-              <label htmlFor="main_image" className="image-upload-btn">
-                Choose Main Image
-              </label>
-              {imagePreviews.main && (
-                <div className="image-preview">
-                  <img src={imagePreviews.main} alt="Main preview" />
-                  <button 
-                    type="button" 
-                    className="remove-image-btn"
-                    onClick={removeMainImage}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-              {product?.main_image && !imagePreviews.main && (
-                <div className="current-image">
-                  <p>Current Image:</p>
-                  <img 
-                    src={typeof product.main_image === 'string' ? product.main_image : URL.createObjectURL(product.main_image)} 
-                    alt="Current main" 
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Detail Images Upload */}
-          <div className="form-group">
-            <label className="form-label">Detail Images</label>
-            <div className="image-upload-container">
-              <input
-                type="file"
-                id="detail_images"
-                onChange={handleDetailImagesChange}
-                accept="image/*"
-                multiple
-                className="image-input"
-              />
-              <label htmlFor="detail_images" className="image-upload-btn">
-                Choose Detail Images
-              </label>
-              <div className="detail-images-preview">
-                {imagePreviews.detail.map((preview, index) => (
-                  <div key={index} className="detail-image-preview">
-                    <img src={preview} alt={`Detail ${index + 1}`} />
-                    <button 
-                      type="button" 
-                      className="remove-image-btn"
-                      onClick={() => removeDetailImage(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
           <div className="form-group">
             <label className="checkbox-label">
               <input
