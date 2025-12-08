@@ -54,6 +54,20 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
         { text: "List Products", href: "/product" }
       ]
     },
+     {
+    title: "Banners",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v2H2V4z"/>
+        <path fillRule="evenodd" d="M2 8h16v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8zm4 2a1 1 0 11-2 0 1 1 0 012 0zm9-1a1 1 0 100 2 1 1 0 000-2zm-5 5a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd"/>
+      </svg>
+    ),
+    type: "submenu",
+    items: [
+      { text: "Add Banner", href: "/add-banner" },
+      { text: "List Banners", href: "/banner" }
+    ]
+  },
     {
       title: "Categories",
       icon: (

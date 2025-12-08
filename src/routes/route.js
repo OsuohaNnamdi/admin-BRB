@@ -20,6 +20,8 @@ import ProfilePage from "../pages/main/ProfilePage.jsx";
 import OrderList from "../pages/main/orders/OrderList.jsx";
 import SingleOrder from "../pages/main/orders/SingleOrder.jsx";
 import ReviewList from "../pages/main/ReviewList.jsx";
+import BannerList from "../pages/main/banner/BannerList.jsx";
+import AddBanner from "../pages/main/banner/AddBanner.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -203,6 +205,18 @@ const router = createBrowserRouter(
         <PublicLayout>
           <Registration />
         </PublicLayout>
+      } />
+
+      <Route path="/banner" element={
+        <ProtectedLayout>
+          <BannerList />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/add-banner" element={
+        <ProtectedLayout>
+          <AddBanner />
+        </ProtectedLayout>
       } />
 
       {/* Public Routes without redirection */}

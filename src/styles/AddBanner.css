@@ -1,0 +1,368 @@
+/* styles/AddBanner.css */
+.banner-form-container {
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: calc(100vh - 80px);
+}
+
+.banner-form-header {
+  margin-bottom: 2rem;
+}
+
+.banner-form-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.banner-form-header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.banner-form {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.banner-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .banner-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.banner-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.banner-form-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.banner-form-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Form Elements */
+.banner-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.banner-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.banner-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.banner-form-label.required::after {
+  content: " *";
+  color: #ef4444;
+}
+
+.banner-form-input,
+.banner-form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  font-family: inherit;
+}
+
+.banner-form-input:focus,
+.banner-form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.banner-form-input.error,
+.banner-form-textarea.error {
+  border-color: #ef4444;
+}
+
+.banner-form-input.error:focus,
+.banner-form-textarea.error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.banner-form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+/* Image Upload */
+.banner-drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.3s;
+  background: #fafafa;
+  cursor: pointer;
+  position: relative;
+}
+
+.banner-drop-zone:hover {
+  border-color: #9ca3af;
+}
+
+.banner-drop-zone.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.banner-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.banner-drop-zone-content {
+  pointer-events: none;
+}
+
+.banner-drop-zone-icon {
+  font-size: 3rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.banner-drop-zone-text {
+  font-size: 1.125rem;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.banner-drop-zone-subtext {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Image Preview */
+.banner-image-preview-container {
+  margin-bottom: 1rem;
+}
+
+.banner-image-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.banner-preview-image {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.banner-image-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.banner-current-image-info {
+  background: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  margin-top: 0.5rem;
+}
+
+.banner-current-image-info p {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Live Preview */
+.banner-live-preview {
+  margin-top: 0.5rem;
+}
+
+.banner-preview-container {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+.banner-preview {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.banner-preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  display: flex;
+  align-items: flex-end;
+  padding: 1.5rem;
+}
+
+.banner-preview-text {
+  color: white;
+  max-width: 80%;
+}
+
+.preview-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.preview-text {
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Helper Text */
+.banner-helper-text {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.banner-error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Form Actions */
+.banner-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Button Styles */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #567951;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #456845;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.loading-state .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+  margin-bottom: 1rem;
+}
+
+.loading-state p {
+  color: #6b7280;
+}

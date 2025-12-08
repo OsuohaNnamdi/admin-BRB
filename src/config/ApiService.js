@@ -108,6 +108,28 @@ async createProduct(productData) {
     return apiClient.patch(`/admin/orders/${orderId}/`, statusData,{}, true);
   };
 
+  async getAdminBanners() {
+    return apiClient.get('/admin/banners/', {}, true);
+  }
+
+  async getBanner(id) {
+    return apiClient.get(`/admin/banners/${id}/`, {}, true);
+  }
+
+  async createBanner(formData) {
+    return apiClient.post('/admin/banners/', formData, {}, true, true);
+  }
+
+  async updateBanner(id, data, isFormData = false) {
+    const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
+    const body = isFormData ? data : JSON.stringify(data);
+    return apiClient.patch(`/admin/banners/${id}/`, body, headers, true);
+  }
+
+  async deleteBanner(id) {
+    return apiClient.delete(`/admin/banners/${id}/`, {}, true);
+  }
+
   // Admin Inventory Management
   async getAdminInventory() {
     return apiClient.get('/admin/inventory/', {}, true);

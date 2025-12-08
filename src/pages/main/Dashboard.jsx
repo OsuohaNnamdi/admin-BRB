@@ -98,7 +98,7 @@ const Dashboard = () => {
                       <div className="dashboard-sub-section">
                         <div className="dashboard-section-header">
                           <h2 className="dashboard-section-title">Recent Orders</h2>
-                          <a href="/admin/orders" className="dashboard-view-all-link">View All</a>
+                          <a href="/orders" className="dashboard-view-all-link">View All</a>
                         </div>
                         <RecentOrders data={dashboardData} />
                       </div>
@@ -106,7 +106,7 @@ const Dashboard = () => {
                       <div className="dashboard-sub-section">
                         <div className="dashboard-section-header">
                           <h2 className="dashboard-section-title">Best Selling Products</h2>
-                          <a href="/admin/products" className="dashboard-view-all-link">View All</a>
+                          <a href="/product" className="dashboard-view-all-link">View All</a>
                         </div>
                         <BestSellingProducts data={dashboardData} />
                       </div>
@@ -116,7 +116,7 @@ const Dashboard = () => {
                     <div className="dashboard-section">
                       <div className="dashboard-section-header">
                         <h2 className="dashboard-section-title">Recent Products</h2>
-                        <a href="/admin/products" className="dashboard-view-all-link">View All</a>
+                        <a href="/product" className="dashboard-view-all-link">View All</a>
                       </div>
                       <ProductsSection data={dashboardData} />
                     </div>

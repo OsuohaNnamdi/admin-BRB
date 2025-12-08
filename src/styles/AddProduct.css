@@ -130,7 +130,7 @@
 .add-product-select:focus,
 .add-product-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #567951;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -218,8 +218,8 @@
 }
 
 .add-product-checkbox-label input:checked + .add-product-checkmark {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #567951;
+  border-color: #567951;
 }
 
 .add-product-checkbox-label input:checked + .add-product-checkmark::after {
@@ -280,7 +280,7 @@
 }
 
 .add-product-drop-zone.drag-active {
-  border-color: #3b82f6;
+  border-color: #567951;
   background: #eff6ff;
   transform: scale(1.02);
 }
@@ -324,7 +324,7 @@
 
 .add-product-browse-btn {
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
+  background: #567951;
   color: white;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -339,7 +339,7 @@
 }
 
 .add-product-browse-btn:hover {
-  background: #2563eb;
+  background: #567951;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
@@ -418,12 +418,12 @@
 }
 
 .add-product-btn-primary {
-  background: #3b82f6;
+  background: #567951;
   color: white;
 }
 
 .add-product-btn-primary:hover {
-  background: #2563eb;
+  background: #567951;
   transform: translateY(-1px);
 }
 

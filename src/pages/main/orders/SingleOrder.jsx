@@ -314,13 +314,11 @@ const handleUpdateError = (error) => {
                           onChange={(e) => updateOrderStatus(e.target.value)}
                           disabled={updating}
                         >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="processing">Processing</option>
-                          <option value="shipped">Shipped</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="completed">Completed</option>
+                         <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
                         </select>
                         {updating && <div className="updating-spinner"></div>}
                       </div>

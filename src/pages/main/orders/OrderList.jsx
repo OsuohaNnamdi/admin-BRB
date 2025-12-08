@@ -178,22 +178,19 @@ const OrderList = () => {
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: 'pending',
-      confirmed: 'confirmed',
-      processing: 'processing',
+      paided: 'paided',
       shipped: 'shipped',
-      delivered: 'delivered',
-      cancelled: 'cancelled',
       completed: 'completed',
-      refunded: 'refunded'
+      cancelled: 'cancelled'
     };
     return statusMap[status?.toLowerCase()] || 'pending';
   };
 
   const formatPrice = (price) => {
-    if (!price) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
+    if (!price) return '₦0.00';
+    return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'NGN'
     }).format(price);
   };
 
@@ -302,13 +299,10 @@ const OrderList = () => {
                     >
                       <option value="">All Status</option>
                       <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="processing">Processing</option>
+                      <option value="paid">Paid</option>
                       <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
-                      <option value="refunded">Refunded</option>
                     </select>
                     
                     <select 
@@ -453,13 +447,10 @@ const OrderList = () => {
                                       onChange={(e) => handleStatusChange(order.id, order.status, e.target.value)}
                                     >
                                       <option value="pending">Pending</option>
-                                      <option value="confirmed">Confirmed</option>
-                                      <option value="processing">Processing</option>
+                                      <option value="paid">Paid</option>
                                       <option value="shipped">Shipped</option>
-                                      <option value="delivered">Delivered</option>
                                       <option value="completed">Completed</option>
                                       <option value="cancelled">Cancelled</option>
-                                      <option value="refunded">Refunded</option>
                                     </select>
                                   </div>
                                 </td>
@@ -530,13 +521,10 @@ const OrderList = () => {
                                   onChange={(e) => handleStatusChange(order.id, order.status, e.target.value)}
                                 >
                                   <option value="pending">Pending</option>
-                                  <option value="confirmed">Confirmed</option>
-                                  <option value="processing">Processing</option>
+                                  <option value="paid">Paid</option>
                                   <option value="shipped">Shipped</option>
-                                  <option value="delivered">Delivered</option>
                                   <option value="completed">Completed</option>
                                   <option value="cancelled">Cancelled</option>
-                                  <option value="refunded">Refunded</option>
                                 </select>
                               </div>
                               <button 
