@@ -7,8 +7,6 @@ import { useAlert } from '../../context/alert/AlertContext';
 
 const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [showSearch, setShowSearch] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -53,12 +51,7 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-      if (messagesRef.current && !messagesRef.current.contains(event.target)) {
-        setShowMessages(false);
-      }
+      
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
@@ -78,8 +71,6 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
     const handleEscapeKey = (event) => {
       if (event.key === 'Escape') {
         setShowSearch(false);
-        setShowNotifications(false);
-        setShowMessages(false);
         setShowUserMenu(false);
       }
     };
@@ -90,8 +81,6 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
 
   // Close other dropdowns when one opens
   const openDropdown = (dropdownName) => {
-    setShowNotifications(dropdownName === 'notifications');
-    setShowMessages(dropdownName === 'messages');
     setShowUserMenu(dropdownName === 'user');
     setShowSearch(dropdownName === 'search');
   };
@@ -223,43 +212,6 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
 
         {/* Right Section */}
         <div className="admin-header-right">
-          {/* Notifications */}
-          <div className="admin-header-item admin-dropdown-container" ref={notificationsRef}>
-            <button 
-              className="admin-icon-button admin-notification-button"
-              onClick={() => openDropdown('notifications')}
-              disabled={isLoggingOut}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L14 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-              </svg>
-              <span className="admin-notification-badge">3</span>
-            </button>
-
-            {showNotifications && (
-              <div className="admin-dropdown-menu admin-notification-menu">
-                <div className="admin-dropdown-header">
-                  <h3>Notifications</h3>
-                  <span className="admin-badge">3 unread</span>
-                </div>
-                <div className="admin-dropdown-content">
-                  <div className="admin-notification-item admin-unread">
-                    <div className="admin-notification-icon">📦</div>
-                    <div className="admin-notification-content">
-                      <p className="admin-notification-title">New Order Received</p>
-                      <p className="admin-notification-message">Order #BRB-2024-001 has been placed</p>
-                      <span className="admin-notification-time">2 min ago</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="admin-dropdown-footer">
-                  <button className="admin-view-all">
-                    View all notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* User Menu */}
           <div className="admin-header-item admin-dropdown-container" ref={userMenuRef}>
