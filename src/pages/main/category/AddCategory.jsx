@@ -36,11 +36,6 @@ const AddCategory = () => {
                 onSettingsClick={() => setSettingsOpen(true)} 
               />
               <CategoryForm />
-              <div className="bottom-page">
-                <div className="body-text">Copyright © 2025 Remos. Design with</div>
-                <i className="icon-heart"></i>
-                <div className="body-text">by <a href="https://themeforest.net/user/themesflat/404">Themesflat</a> All rights reserved.</div>
-              </div>
             </div>
           </div>
         </div>

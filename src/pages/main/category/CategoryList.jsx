@@ -24,7 +24,6 @@ const CategoryList = () => {
     showSuccess, 
     showError, 
     showWarning, 
-    showInfo, 
     showLoading,
     removeAlert 
   } = useAlert();
@@ -468,12 +467,6 @@ const CategoryList = () => {
                     </div>
                   </div>
                 )}
-              </div>
-
-              <div className="bottom-page">
-                <div className="body-text">Copyright © 2025 Remos. Design with</div>
-                <i className="icon-heart"></i>
-                <div className="body-text">by <a href="https://themeforest.net/user/themesflat/404">Themesflat</a> All rights reserved.</div>
               </div>
             </div>
           </div>

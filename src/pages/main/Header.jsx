@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import '../../styles/Header.css';
 import ApiService from '../../config/ApiService';
 import { useAlert } from '../../context/alert/AlertContext';
+import { searchRoutes } from '../../routes/adminRoutes';
 
 const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [showSearch, setShowSearch] = useState(false);
@@ -13,8 +14,8 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const [userProfile, setUserProfile] = useState(null);
   
   const searchRef = useRef(null);
-  const notificationsRef = useRef(null);
-  const messagesRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState(''); // Add this
+  const [searchResults, setSearchResults] = useState([]);
   const userMenuRef = useRef(null);
   
   const navigate = useNavigate();
@@ -83,6 +84,27 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
   const openDropdown = (dropdownName) => {
     setShowUserMenu(dropdownName === 'user');
     setShowSearch(dropdownName === 'search');
+  };
+
+    const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    if (query.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+    
+    const results = searchRoutes(query);
+    setSearchResults(results.slice(0, 8)); // Limit to 8 results
+  };
+
+  // Add navigation handler for search results
+  const handleSearchResultClick = (path) => {
+    navigate(path);
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const handleHamburgerClick = () => {
@@ -164,50 +186,79 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
             </button>
           )}
 
-          {/* Search Bar */}
-          <div className="admin-search-container" ref={searchRef}>
-            <div className="admin-search-input-wrapper">
-              <svg className="admin-search-icon" width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search products, orders, customers..."
-                className="admin-search-input"
-                onFocus={() => openDropdown('search')}
-              />
-            </div>
+             <div className="admin-search-container" ref={searchRef}>
+      <div className="admin-search-input-wrapper">
+        <svg className="admin-search-icon" width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search products, orders, customers..."
+          className="admin-search-input"
+          onFocus={() => openDropdown('search')}
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && searchResults.length > 0) {
+              handleSearchResultClick(searchResults[0].path);
+            }
+          }}
+        />
+      </div>
 
-            {showSearch && (
-              <div className="admin-search-results">
-                <div className="admin-search-section">
-                  <h4 className="admin-section-title">Quick Links</h4>
-                  <div 
-                    className="admin-search-item"
-                   // onClick={() => handleQuickLinkClick('/')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="admin-menu-icon">📊</div>
-                    <div className="admin-product-info">
-                      <span className="admin-product-name">View Analytics Dashboard</span>
-                      <span className="admin-product-category">Dashboard</span>
-                    </div>
-                  </div>
-                  <div 
-                    className="admin-search-item"
-                   // onClick={() => handleQuickLinkClick('/product')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="admin-menu-icon">🛍️</div>
-                    <div className="admin-product-info">
-                      <span className="admin-product-name">Manage Products</span>
-                      <span className="admin-product-category">Products</span>
-                    </div>
+      {showSearch && (
+        <div className="admin-search-results">
+          {searchQuery.trim() === '' ? (
+            <div className="admin-search-section">
+              <h4 className="admin-section-title">Quick Links</h4>
+              {searchRoutes('').slice(0, 4).map((route, index) => (
+                <div 
+                  key={index}
+                  className="admin-search-item"
+                  onClick={() => handleSearchResultClick(route.path)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="admin-menu-icon">{route.icon}</div>
+                  <div className="admin-product-info">
+                    <span className="admin-product-name">{route.title}</span>
+                    <span className="admin-product-category">{route.category}</span>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : searchResults.length > 0 ? (
+            <>
+              <div className="admin-search-section">
+                <h4 className="admin-section-title">
+                  Search Results ({searchResults.length})
+                </h4>
+                {searchResults.map((route, index) => (
+                  <div 
+                    key={index}
+                    className="admin-search-item"
+                    onClick={() => handleSearchResultClick(route.path)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="admin-menu-icon">{route.icon}</div>
+                    <div className="admin-product-info">
+                      <span className="admin-product-name">{route.title}</span>
+                      <span className="admin-product-category">{route.category}</span>
+                      <span className="admin-product-description">{route.description}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="admin-search-section">
+              <div className="admin-search-no-results">
+                <span>No results found for "{searchQuery}"</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
         </div>
 
         {/* Right Section */}
