@@ -6,7 +6,6 @@ import Sidebar from '../Sidebar';
 import SettingsPanel from '../../../component/SettingsPanel';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
-import { useNavigate } from 'react-router-dom';
 import CouponModal from './CouponModal';
 import SendCouponModal from './SendCouponModal';
 
@@ -23,7 +22,7 @@ const CouponList = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [discountTypeFilter, setDiscountTypeFilter] = useState('all');
   const { showSuccess, showError, showWarning, showInfo, showLoading, removeAlert } = useAlert();
-  const navigate = useNavigate();
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
