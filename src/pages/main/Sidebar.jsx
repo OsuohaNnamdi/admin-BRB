@@ -1,7 +1,7 @@
 // components/Sidebar.js
 import React, { useState, useEffect } from 'react';
 import '../../styles/Sidebar.css';
-import logo from '../../assets/BRB Logo.png';
+import logo from '../../assets/logo/brb.svg';
 
 const Sidebar = ({ isOpen, onToggle, onClose }) => {
   const [openMenus, setOpenMenus] = useState({});
