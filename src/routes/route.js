@@ -22,6 +22,7 @@ import SingleOrder from "../pages/main/orders/SingleOrder.jsx";
 import ReviewList from "../pages/main/ReviewList.jsx";
 import BannerList from "../pages/main/banner/BannerList.jsx";
 import AddBanner from "../pages/main/banner/AddBanner.jsx";
+import CouponList from "../pages/main/coupon/CouponList.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -213,6 +214,13 @@ const router = createBrowserRouter(
         </ProtectedLayout>
       } />
 
+      <Route path="/coupon" element={
+        <ProtectedLayout>
+          <CouponList />
+        </ProtectedLayout>
+      } />
+      
+     
       <Route path="/add-banner" element={
         <ProtectedLayout>
           <AddBanner />

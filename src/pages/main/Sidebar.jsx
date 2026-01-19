@@ -1,7 +1,7 @@
 // components/Sidebar.js
 import React, { useState, useEffect } from 'react';
 import '../../styles/Sidebar.css';
-import logo from '../../assets/logo/brb.svg';
+import logo from '../../assets/BRB Logo.png';
 
 const Sidebar = ({ isOpen, onToggle, onClose }) => {
   const [openMenus, setOpenMenus] = useState({});
@@ -90,6 +90,17 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
         </svg>
       ),
       href: "/orders",
+      type: "link"
+    },
+    {
+      title: "Coupons",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm10 6a1 1 0 100-2 1 1 0 000 2zm-4 0a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
+          <path d="M4 12h16v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/>
+        </svg>
+      ),
+      href: "/coupon",
       type: "link"
     },
     {

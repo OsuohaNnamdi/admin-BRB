@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://apiskincare.pythonanywhere.com/api/v1';
+const API_BASE_URL = 'https://skincareapi.synoloopsolutions.com.ng/api/v1';
 const TOKEN_KEY = 'adminToken';
 
 class ApiClient {

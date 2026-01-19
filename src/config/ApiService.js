@@ -130,6 +130,34 @@ async createProduct(productData) {
     return apiClient.delete(`/admin/banners/${id}/`, {}, true);
   }
 
+    async getAdminCoupons() {
+    return apiClient.get('/admin/coupons/', {}, true);
+  }
+
+   async getCoupon(id) {
+    return apiClient.get(`/admin/coupons/${id}/`, {}, true);
+  }
+
+  async createCoupon(formData) {
+    return apiClient.post('/admin/coupons/', formData, {}, true, true);
+  }
+
+  async updateCoupon(id, data) {
+ 
+    return apiClient.put(`/admin/coupons/${id}/`, data, {}, true);
+  }
+
+  async deleteCoupon(id) {
+    return apiClient.delete(`/admin/coupons/${id}/`, {}, true);
+  }
+
+  async sendCoupon(couponId, emails) {
+    return apiClient.post('/admin/coupons/send/', {
+      coupon_id: couponId,
+      emails: emails
+    }, {}, true);
+  }
+
   // Admin Inventory Management
   async getAdminInventory() {
     return apiClient.get('/admin/inventory/', {}, true);

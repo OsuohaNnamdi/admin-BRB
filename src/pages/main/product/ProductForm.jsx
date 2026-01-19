@@ -1,4 +1,3 @@
-// components/ProductForm.js
 import React, { useState, useRef, useEffect } from 'react';
 import '../../../styles/AddProduct.css';
 import ApiService from '../../../config/ApiService';
@@ -10,6 +9,7 @@ const ProductForm = () => {
     name: '',
     slug: '',
     description: '',
+    ingredients: '',
     price: '',
     stock: '',
     main_image: null,
@@ -252,6 +252,9 @@ const ProductForm = () => {
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
+    if (!formData.ingredients.trim()) {
+      newErrors.ingredients = 'Ingredients list is required';
+    }
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Valid price is required';
     }
@@ -297,6 +300,7 @@ const ProductForm = () => {
       submitData.append('name', formData.name.trim());
       submitData.append('slug', formData.slug.trim());
       submitData.append('description', formData.description.trim());
+      submitData.append('ingredients', formData.ingredients.trim());
       submitData.append('price', parseFloat(formData.price));
       submitData.append('stock', parseInt(formData.stock));
       submitData.append('is_active', formData.is_active.toString());
@@ -314,6 +318,7 @@ const ProductForm = () => {
       });
 
       console.log('Submitting product data...');
+      console.log('Ingredients:', formData.ingredients);
       console.log('Main image:', formData.main_image);
       console.log('Detail images:', formData.detail_images);
       
@@ -331,6 +336,7 @@ const ProductForm = () => {
         name: '',
         slug: '',
         description: '',
+        ingredients: '',
         price: '',
         stock: '',
         is_active: true,
@@ -423,6 +429,7 @@ const ProductForm = () => {
         name: '',
         slug: '',
         description: '',
+        ingredients: '',
         price: '',
         stock: '',
         is_active: true,
@@ -558,12 +565,39 @@ const ProductForm = () => {
             </div>
 
             <div className="add-product-card">
+              <h3>Ingredients</h3>
+              
+              <div className="add-product-form-group">
+                <label htmlFor="ingredients" className="add-product-label required">
+                  Product Ingredients
+                </label>
+                <textarea
+                  id="ingredients"
+                  name="ingredients"
+                  value={formData.ingredients}
+                  onChange={handleInputChange}
+                  placeholder="List all ingredients separated by commas or new lines. Example: Water, Flour, Sugar, Salt..."
+                  rows="4"
+                  className={`add-product-textarea ${errors.ingredients ? 'error' : ''}`}
+                  required
+                  disabled={isSubmitting}
+                />
+                {errors.ingredients && (
+                  <span className="add-product-error-text">{errors.ingredients}</span>
+                )}
+                <p className="add-product-helper-text">
+                  List all ingredients used in the product. Be comprehensive for customers with allergies or dietary restrictions.
+                </p>
+              </div>
+            </div>
+
+            <div className="add-product-card">
               <h3>Pricing & Inventory</h3>
               
               <div className="add-product-form-row">
                 <div className="add-product-form-group">
                   <label htmlFor="price" className="add-product-label required">
-                    Price ($)
+                    Price (₦)
                   </label>
                   <input
                     type="number"
