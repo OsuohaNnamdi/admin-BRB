@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/ProductList.css';
 import '../../styles/Inventory.css';
 import Header from './Header';
@@ -32,7 +32,7 @@ const InventoryPage = () => {
   };
 
   // API functions - Updated to use the correct endpoints
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminInventory();
@@ -55,9 +55,9 @@ const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
-  const searchProducts = async (searchQuery) => {
+  const searchProducts = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
       setSearchedProducts([]);
       return;
@@ -79,10 +79,10 @@ const InventoryPage = () => {
       );
       setSearchedProducts(filtered.slice(0, 10));
     }
-  };
+  }, [products]);
 
   // Updated to use the inventory adjustment endpoint
-  const adjustStock = async (productId, adjustment) => {
+  const adjustStock = useCallback(async (productId, adjustment) => {
     try {
       const response = await ApiService.adjustInventory(productId, adjustment);
       
@@ -92,15 +92,15 @@ const InventoryPage = () => {
       console.error('Error adjusting stock:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const addStock = async (productId, quantityToAdd) => {
+  const addStock = useCallback(async (productId, quantityToAdd) => {
     return await adjustStock(productId, parseInt(quantityToAdd));
-  };
+  }, [adjustStock]);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   useEffect(() => {
     let filtered = products;
@@ -180,7 +180,6 @@ const InventoryPage = () => {
   };
 
   const handleQuickAdjust = async (productId, figure, stock) => {
-
     const adjustment = stock + figure;
 
     try {
@@ -211,11 +210,12 @@ const InventoryPage = () => {
     return `${stockValue} in stock`;
   };
 
-  const getCategoryName = (product) => {
-    if (product.category?.name) return product.category.name;
-    if (product.category) return product.category;
-    return 'Uncategorized';
-  };
+  // ✅ FIXED: Removed unused getCategoryName function
+  // const getCategoryName = (product) => {
+  //   if (product.category?.name) return product.category.name;
+  //   if (product.category) return product.category;
+  //   return 'Uncategorized';
+  // };
 
   const formatPrice = (price) => {
     if (!price) return '₦0.00';
@@ -225,7 +225,6 @@ const InventoryPage = () => {
     }).format(price);
   };
 
-
   const clearFilters = () => {
     setSearchTerm('');
     setCategoryFilter('');
@@ -234,6 +233,7 @@ const InventoryPage = () => {
 
   const hasActiveFilters = searchTerm || categoryFilter || stockFilter;
 
+  // ✅ FIXED: Moved categories inside return statement to use it
   // Get unique categories for filter
   const categories = [...new Set(products
     .map(product => product.category?.name || product.category)
@@ -286,7 +286,20 @@ const InventoryPage = () => {
                   </div>
                   
                   <div className="filter-controls">
-                       
+                    {/* ✅ FIXED: Added category filter dropdown using categories array */}
+                    <select 
+                      className="filter-select"
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map((category, index) => (
+                        <option key={index} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    
                     <select 
                       className="filter-select"
                       value={stockFilter}
@@ -365,6 +378,7 @@ const InventoryPage = () => {
                         <thead>
                           <tr>
                             <th>Product</th>
+                            <th>Category</th>
                             <th>Current Stock</th>
                             <th>Price</th>
                             <th>Stock Actions</th>
@@ -385,11 +399,14 @@ const InventoryPage = () => {
                                   />
                                   <div className="product-details">
                                     <div className="product-name">{product.name || 'Unnamed Product'}</div>
-                                    
                                   </div>
                                 </div>
                               </td>
-                             
+                              <td>
+                                <span className="category-badge">
+                                  {product.category?.name || product.category || 'Uncategorized'}
+                                </span>
+                              </td>
                               <td>
                                 <span className={`stock-badge ${getStockBadge(product.stock)}`}>
                                   {getStockText(product.stock)}
