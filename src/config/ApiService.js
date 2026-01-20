@@ -36,42 +36,40 @@ class ApiService {
     }
   }
 
-  
   async getProfile() {
     return apiClient.get('/auth/profile/', {}, true);
   }
 
   async updateProfile(profileData) {
-    return apiClient.put('/auth/profile/', profileData, true);
+    return apiClient.put('/auth/profile/', profileData, {}, true);
   }
 
   async getAdminProducts() {
     return apiClient.get('/admin/products', {}, true);
   }
 
-  
-async createProduct(productData) {
-  // For FormData, let the browser set the Content-Type with boundary
-  const config = productData instanceof FormData ? {} : {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-  
-  return apiClient.post('/admin/products/', productData, config, true);
-}
+  async createProduct(productData) {
+    // For FormData, let the browser set the Content-Type with boundary
+    const config = productData instanceof FormData ? {} : {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    
+    return apiClient.post('/admin/products/', productData, config, true);
+  }
 
   // Update product with PATCH method
   async updateProduct(id, productData) {
-  // For FormData, let the browser set the Content-Type with boundary
-  const config = productData instanceof FormData ? {} : {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-  
-  return apiClient.patch(`/admin/products/${id}/`, productData, config, true);
-}
+    // For FormData, let the browser set the Content-Type with boundary
+    const config = productData instanceof FormData ? {} : {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    
+    return apiClient.patch(`/admin/products/${id}/`, productData, config, true);
+  }
 
   async deleteProduct(id) {
     return apiClient.delete(`/admin/products/${id}/`, {}, true);
@@ -97,16 +95,15 @@ async createProduct(productData) {
 
   async getAdminOrders() {
     return apiClient.get('/admin/orders/', {}, true);
-  };
+  }
 
-  async getAdminOrder  (orderId)  {
+  async getAdminOrder(orderId) {
     return apiClient.get(`/admin/orders/${orderId}/`, {}, true);
-  };
+  }
 
-  async updateOrderStatus  (orderId, statusData)  {
-   
-    return apiClient.patch(`/admin/orders/${orderId}/`, statusData,{}, true);
-  };
+  async updateOrderStatus(orderId, statusData) {
+    return apiClient.patch(`/admin/orders/${orderId}/`, statusData, {}, true);
+  }
 
   async getAdminBanners() {
     return apiClient.get('/admin/banners/', {}, true);
@@ -117,33 +114,31 @@ async createProduct(productData) {
   }
 
   async createBanner(formData) {
-    return apiClient.post('/admin/banners/', formData, {}, true, true);
+    return apiClient.post('/admin/banners/', formData, {}, true);
   }
 
   async updateBanner(id, data, isFormData = false) {
-    const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
-    const body = isFormData ? data : JSON.stringify(data);
-    return apiClient.patch(`/admin/banners/${id}/`, body, headers, true);
+    const config = isFormData ? {} : { headers: { 'Content-Type': 'application/json' } };
+    return apiClient.patch(`/admin/banners/${id}/`, data, config, true);
   }
 
   async deleteBanner(id) {
     return apiClient.delete(`/admin/banners/${id}/`, {}, true);
   }
 
-    async getAdminCoupons() {
+  async getAdminCoupons() {
     return apiClient.get('/admin/coupons/', {}, true);
   }
 
-   async getCoupon(id) {
+  async getCoupon(id) {
     return apiClient.get(`/admin/coupons/${id}/`, {}, true);
   }
 
   async createCoupon(formData) {
-    return apiClient.post('/admin/coupons/', formData, {}, true, true);
+    return apiClient.post('/admin/coupons/', formData, {}, true);
   }
 
   async updateCoupon(id, data) {
- 
     return apiClient.put(`/admin/coupons/${id}/`, data, {}, true);
   }
 
@@ -163,7 +158,6 @@ async createProduct(productData) {
     return apiClient.get('/admin/inventory/', {}, true);
   }
 
-
   async adjustInventory(productId, adjustment) {
     const adjustmentData = {
       product_id: productId,
@@ -172,20 +166,22 @@ async createProduct(productData) {
     return apiClient.put('/admin/inventory/adjust/', adjustmentData, {}, true);
   }
 
-   // Admin Reviews Management
+  // Admin Reviews Management
   async getAdminReviews(params = {}) {
     // Build query parameters
-    const queryParams = {};
+    const config = {
+      params: {}
+    };
     
-    if (params.rating) queryParams.rating = params.rating;
-    if (params.product_id) queryParams.product_id = params.product_id;
-    if (params.user_id) queryParams.user_id = params.user_id;
-    if (params.search) queryParams.search = params.search;
-    if (params.date) queryParams.date = params.date;
-    if (params.page) queryParams.page = params.page;
-    if (params.page_size) queryParams.page_size = params.page_size;
+    if (params.rating) config.params.rating = params.rating;
+    if (params.product_id) config.params.product_id = params.product_id;
+    if (params.user_id) config.params.user_id = params.user_id;
+    if (params.search) config.params.search = params.search;
+    if (params.date) config.params.date = params.date;
+    if (params.page) config.params.page = params.page;
+    if (params.page_size) config.params.page_size = params.page_size;
     
-    return apiClient.get('/admin/reviews/', queryParams, true);
+    return apiClient.get('/admin/reviews/', config, true);
   }
 
   async getReviewDetails(reviewId) {
@@ -199,7 +195,6 @@ async createProduct(productData) {
   async updateReview(reviewId, reviewData) {
     return apiClient.put(`/admin/reviews/${reviewId}/`, reviewData, {}, true);
   }
-
 
   // Admin Dashboard
   async getAdminDashboard() {
@@ -215,6 +210,18 @@ async createProduct(productData) {
   async getCurrentToken() {
     return apiClient.getToken();
   }
+
+  // Search products
+  async searchProducts(searchQuery) {
+    const config = {
+      params: {
+        search: searchQuery
+      }
+    };
+    return apiClient.get('/admin/products/search/', config, true);
+  }
 }
 
-export default new ApiService();
+const apiServiceInstance = new ApiService();
+
+export default apiServiceInstance;
