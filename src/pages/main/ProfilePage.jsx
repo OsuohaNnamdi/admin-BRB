@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/ProfilePage.css';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -37,7 +37,7 @@ const ProfilePage = () => {
   };
 
   // Fetch user profile
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getProfile();
@@ -61,7 +61,7 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   // Update profile
   const updateProfile = async (profileData) => {
@@ -102,7 +102,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
