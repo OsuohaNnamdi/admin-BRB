@@ -177,4 +177,4 @@ post(url, data, config = {}, useToken = false) {
   }
 }
 
-export default ApiClient();
+export default new ApiClient();
