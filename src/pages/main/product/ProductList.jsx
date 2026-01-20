@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/ProductList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -21,7 +21,7 @@ const ProductList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const { showSuccess, showError, showWarning, showInfo, showLoading, removeAlert } = useAlert();
+  const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -31,8 +31,8 @@ const ProductList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchProducts = async () => {
+  // API functions wrapped with useCallback
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminProducts();
@@ -55,11 +55,11 @@ const ProductList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   const navigate = useNavigate();
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setCategoriesLoading(true);
     try {
       const response = await ApiService.getAdminCategories();
@@ -82,7 +82,7 @@ const ProductList = () => {
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, [showError]);
 
   const createProduct = async (productData) => {
     try {
@@ -95,33 +95,33 @@ const ProductList = () => {
     }
   };
 
-// UPDATED: Update product with PATCH method (partial updates only)
-const updateProduct = async (id, productData) => {
-  try {
-    // Prepare only the fields that need updating (partial update)
-    const updateData = {};
-    
-    // Only include fields that have changed or are provided
-    if (productData.name !== undefined) updateData.name = productData.name;
-    if (productData.slug !== undefined) updateData.slug = productData.slug;
-    if (productData.description !== undefined) updateData.description = productData.description;
-    if (productData.price !== undefined) updateData.price = productData.price;
-    if (productData.stock !== undefined) updateData.stock = productData.stock;
-    if (productData.is_active !== undefined) updateData.is_active = productData.is_active;
-    if (productData.category_id !== undefined) updateData.category_id = productData.category_id;
-    
-    // Note: Images are NOT included in PATCH request as per requirements
-    
-    console.log('PATCH updating product with data:', updateData);
-    
-    const response = await ApiService.updateProduct(id, updateData);
-    console.log('Product updated (PATCH):', response.data);
-    return response.data.product || response.data;
-  } catch (error) {
-    console.error('Error updating product:', error);
-    throw error;
-  }
-};
+  // UPDATED: Update product with PATCH method (partial updates only)
+  const updateProduct = async (id, productData) => {
+    try {
+      // Prepare only the fields that need updating (partial update)
+      const updateData = {};
+      
+      // Only include fields that have changed or are provided
+      if (productData.name !== undefined) updateData.name = productData.name;
+      if (productData.slug !== undefined) updateData.slug = productData.slug;
+      if (productData.description !== undefined) updateData.description = productData.description;
+      if (productData.price !== undefined) updateData.price = productData.price;
+      if (productData.stock !== undefined) updateData.stock = productData.stock;
+      if (productData.is_active !== undefined) updateData.is_active = productData.is_active;
+      if (productData.category_id !== undefined) updateData.category_id = productData.category_id;
+      
+      // Note: Images are NOT included in PATCH request as per requirements
+      
+      console.log('PATCH updating product with data:', updateData);
+      
+      const response = await ApiService.updateProduct(id, updateData);
+      console.log('Product updated (PATCH):', response.data);
+      return response.data.product || response.data;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  };
 
   const deleteProduct = async (id) => {
     try {
@@ -136,7 +136,7 @@ const updateProduct = async (id, productData) => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, []);
+  }, [fetchProducts, fetchCategories]);
 
   const handleEdit = (product) => {
     // Transform product data for the modal
@@ -159,98 +159,97 @@ const updateProduct = async (id, productData) => {
     setModalOpen(true);
   };
 
-// UPDATED: Handle modal submit with partial updates
-const handleModalSubmit = async (productData) => {
-  try {
-    let loadingAlertId = showLoading('Saving product...', 'Processing');
-    
-    // Prepare data for API - only include provided fields
-    const submitData = {};
-    
-    // Always include required fields or fields that are provided
-    if (productData.name !== undefined) submitData.name = productData.name;
-    if (productData.slug !== undefined) submitData.slug = productData.slug;
-    if (productData.description !== undefined) submitData.description = productData.description;
-    if (productData.price !== undefined) submitData.price = productData.price;
-    if (productData.stock !== undefined) submitData.stock = productData.stock;
-    if (productData.is_active !== undefined) submitData.is_active = productData.is_active;
-    if (productData.category_id !== undefined) submitData.category_id = productData.category_id;
-    
-    // IMPORTANT: Images are NOT sent in PATCH request
-    // Image updates should be handled separately if needed
-    
-    let result;
-    if (selectedProduct) {
-      // Update existing product using PATCH (partial update)
-      result = await updateProduct(selectedProduct.id, submitData);
-      removeAlert(loadingAlertId);
-      showSuccess('Product updated successfully!', 'Update Successful');
-    } else {
-      // Create new product - still use POST with full data
-      // For creation, include all necessary fields
-      const createData = {
-        name: productData.name,
-        slug: productData.slug,
-        description: productData.description || '',
-        price: productData.price,
-        stock: productData.stock,
-        is_active: productData.is_active,
-        category_id: productData.category_id
-      };
+  // UPDATED: Handle modal submit with partial updates
+  const handleModalSubmit = async (productData) => {
+    try {
+      let loadingAlertId = showLoading('Saving product...', 'Processing');
       
-      // For creation, include images if provided
-      if (productData.main_image) {
-        createData.main_image = productData.main_image;
-      }
+      // Prepare data for API - only include provided fields
+      const submitData = {};
       
-      if (productData.detail_images && productData.detail_images.length > 0) {
-        createData.detail_images = productData.detail_images;
-      }
+      // Always include required fields or fields that are provided
+      if (productData.name !== undefined) submitData.name = productData.name;
+      if (productData.slug !== undefined) submitData.slug = productData.slug;
+      if (productData.description !== undefined) submitData.description = productData.description;
+      if (productData.price !== undefined) submitData.price = productData.price;
+      if (productData.stock !== undefined) submitData.stock = productData.stock;
+      if (productData.is_active !== undefined) submitData.is_active = productData.is_active;
+      if (productData.category_id !== undefined) submitData.category_id = productData.category_id;
       
-      result = await createProduct(createData);
-      removeAlert(loadingAlertId);
-      showSuccess('Product created successfully!', 'Create Successful');
-    }
-    
-    // Refresh products list
-    await fetchProducts();
-    
-    setModalOpen(false);
-    setSelectedProduct(null);
-    
-  } catch (error) {
-    console.error('Error saving product:', error);
+      // IMPORTANT: Images are NOT sent in PATCH request
+      // Image updates should be handled separately if needed
+      
+      if (selectedProduct) {
+        // Update existing product using PATCH (partial update)
+        await updateProduct(selectedProduct.id, submitData);
+        removeAlert(loadingAlertId);
+        showSuccess('Product updated successfully!', 'Update Successful');
+      } else {
+        // Create new product - still use POST with full data
+        // For creation, include all necessary fields
+        const createData = {
+          name: productData.name,
+          slug: productData.slug,
+          description: productData.description || '',
+          price: productData.price,
+          stock: productData.stock,
+          is_active: productData.is_active,
+          category_id: productData.category_id
+        };
         
-    // Handle different error scenarios
-    if (error.response?.data) {
-      const backendErrors = error.response.data;
-      let errorMessage = 'Failed to save product. ';
-      
-      // Format backend errors
-      Object.keys(backendErrors).forEach(key => {
-        if (Array.isArray(backendErrors[key])) {
-          errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
-        } else {
-          errorMessage += `${key}: ${backendErrors[key]} `;
+        // For creation, include images if provided
+        if (productData.main_image) {
+          createData.main_image = productData.main_image;
         }
-      });
+        
+        if (productData.detail_images && productData.detail_images.length > 0) {
+          createData.detail_images = productData.detail_images;
+        }
+        
+        await createProduct(createData);
+        removeAlert(loadingAlertId);
+        showSuccess('Product created successfully!', 'Create Successful');
+      }
       
-      showError(errorMessage.trim(), 'Save Failed', { duration: 6000 });
-    } else if (error.response?.status === 400) {
-      showError('Invalid product data. Please check all fields.', 'Validation Error', { duration: 5000 });
-    } else if (error.response?.status === 401) {
-      showError('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
-    } else if (error.response?.status === 403) {
-      showError('You do not have permission to manage products.', 'Access Denied', { duration: 5000 });
-    } else if (error.response?.status === 404 && selectedProduct) {
-      showError('Product not found. It may have been deleted.', 'Not Found', { duration: 5000 });
-    } else if (error.message === 'Network Error') {
-      showError('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
-    } else {
-      showError('Failed to save product. Please try again.', 'Save Failed', { duration: 5000 });
+      // Refresh products list
+      await fetchProducts();
+      
+      setModalOpen(false);
+      setSelectedProduct(null);
+      
+    } catch (error) {
+      console.error('Error saving product:', error);
+          
+      // Handle different error scenarios
+      if (error.response?.data) {
+        const backendErrors = error.response.data;
+        let errorMessage = 'Failed to save product. ';
+        
+        // Format backend errors
+        Object.keys(backendErrors).forEach(key => {
+          if (Array.isArray(backendErrors[key])) {
+            errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
+          } else {
+            errorMessage += `${key}: ${backendErrors[key]} `;
+          }
+        });
+        
+        showError(errorMessage.trim(), 'Save Failed', { duration: 6000 });
+      } else if (error.response?.status === 400) {
+        showError('Invalid product data. Please check all fields.', 'Validation Error', { duration: 5000 });
+      } else if (error.response?.status === 401) {
+        showError('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
+      } else if (error.response?.status === 403) {
+        showError('You do not have permission to manage products.', 'Access Denied', { duration: 5000 });
+      } else if (error.response?.status === 404 && selectedProduct) {
+        showError('Product not found. It may have been deleted.', 'Not Found', { duration: 5000 });
+      } else if (error.message === 'Network Error') {
+        showError('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
+      } else {
+        showError('Failed to save product. Please try again.', 'Save Failed', { duration: 5000 });
+      }
     }
-  }
-};
+  };
 
   const handleDeleteConfirm = async () => {
     if (selectedProduct) {
