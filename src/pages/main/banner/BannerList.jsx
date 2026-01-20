@@ -1,5 +1,5 @@
 // admin/components/BannerList.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/BannerList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -18,8 +18,7 @@ const BannerList = () => {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const { showSuccess, showError, showWarning, showInfo, showLoading, removeAlert } = useAlert();
+  const { showSuccess, showError, showLoading, removeAlert } = useAlert();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
@@ -30,8 +29,8 @@ const BannerList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchBanners = async () => {
+  // API functions with useCallback
+  const fetchBanners = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminBanners();
@@ -54,7 +53,7 @@ const BannerList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   const createBanner = async (bannerData) => {
     try {
@@ -119,7 +118,7 @@ const BannerList = () => {
 
   useEffect(() => {
     fetchBanners();
-  }, []);
+  }, [fetchBanners]);
 
   const handleEdit = (banner) => {
     setSelectedBanner(banner);
@@ -143,15 +142,14 @@ const BannerList = () => {
         'Processing'
       );
       
-      let result;
       if (selectedBanner) {
         // Update existing banner
-        result = await updateBanner(selectedBanner.id, bannerData);
+        await updateBanner(selectedBanner.id, bannerData);
         removeAlert(loadingAlertId);
         showSuccess('Banner updated successfully!', 'Update Successful');
       } else {
         // Create new banner
-        result = await createBanner(bannerData);
+        await createBanner(bannerData);
         removeAlert(loadingAlertId);
         showSuccess('Banner created successfully!', 'Create Successful');
       }
@@ -232,6 +230,11 @@ const BannerList = () => {
     }
   };
 
+  // ✅ FIX: Added navigation to banner detail page
+  const handleViewDetails = (banner) => {
+    navigate(`/admin/banners/${banner.id}`);
+  };
+
   // Filter banners based on search term
   const filteredBanners = banners.filter(banner => {
     const matchesSearch = 
@@ -265,7 +268,6 @@ const BannerList = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setStatusFilter('');
   };
 
   const hasActiveFilters = searchTerm;
@@ -387,6 +389,13 @@ const BannerList = () => {
                             />
                             <div className="banner-overlay">
                               <div className="banner-actions">
+                                <button 
+                                  className="action-btn view-btn"
+                                  onClick={() => handleViewDetails(banner)}
+                                  title="View details"
+                                >
+                                  👁️ View
+                                </button>
                                 <button 
                                   className="action-btn edit-btn"
                                   onClick={() => handleEdit(banner)}
