@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import '../../../styles/AddProduct.css';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
@@ -12,6 +12,7 @@ const ProductForm = () => {
     ingredients: '',
     price: '',
     stock: '',
+    is_active: true,
     main_image: null,
     detail_images: []
   });
@@ -25,7 +26,6 @@ const ProductForm = () => {
   const { 
     showSuccess, 
     showError, 
-    showWarning, 
     showInfo, 
     showLoading,
     removeAlert 
@@ -34,12 +34,8 @@ const ProductForm = () => {
   const fileInputRef = useRef(null);
   const additionalFilesInputRef = useRef(null);
 
-  // Fetch categories on component mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  // Fetch categories with useCallback
+  const fetchCategories = useCallback(async () => {
     let loadingAlertId = null;
     
     try {
@@ -99,7 +95,12 @@ const ProductForm = () => {
         categories: 'Failed to load categories'
       }));
     }
-  };
+  }, [showLoading, removeAlert, showError]);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
