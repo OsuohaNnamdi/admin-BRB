@@ -1,7 +1,6 @@
 // components/auth/Registration.jsx
 import React, { useState } from 'react';
 import '../../styles/Auth.css';
-import { useNavigate } from 'react-router-dom';
 
 const Registration = ({ onSwitchToLogin, onNext }) => {
 const [formData, setFormData] = useState({
