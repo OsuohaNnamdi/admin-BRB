@@ -7,32 +7,17 @@ export const useAlert = () => {
   const context = useContext(AlertContext);
   if (!context) {
     console.warn('useAlert must be used within an AlertProvider');
-    // Return a mock implementation for debugging
+    // Mock implementation for safety
     return {
       alerts: [],
       addAlert: () => Date.now(),
       removeAlert: () => {},
       clearAlerts: () => {},
-      showSuccess: (message, title) => {
-        console.log('SUCCESS:', title, message);
-        return Date.now();
-      },
-      showError: (message, title) => {
-        console.log('ERROR:', title, message);
-        return Date.now();
-      },
-      showWarning: (message, title) => {
-        console.log('WARNING:', title, message);
-        return Date.now();
-      },
-      showInfo: (message, title) => {
-        console.log('INFO:', title, message);
-        return Date.now();
-      },
-      showLoading: (message, title) => {
-        console.log('LOADING:', title, message);
-        return Date.now();
-      },
+      showSuccess: () => Date.now(),
+      showError: () => Date.now(),
+      showWarning: () => Date.now(),
+      showInfo: () => Date.now(),
+      showLoading: () => Date.now(),
     };
   }
   return context;
@@ -41,8 +26,14 @@ export const useAlert = () => {
 export const AlertProvider = ({ children }) => {
   const [alerts, setAlerts] = useState([]);
 
+  /** 🔹 MUST come before addAlert */
+  const removeAlert = useCallback((id) => {
+    setAlerts(prev => prev.filter(alert => alert.id !== id));
+  }, []);
+
   const addAlert = useCallback((alert) => {
     const id = Date.now() + Math.random();
+
     const newAlert = {
       id,
       type: 'info',
@@ -52,7 +43,7 @@ export const AlertProvider = ({ children }) => {
       ...alert,
       timestamp: Date.now(),
     };
-    
+
     setAlerts(prev => [...prev, newAlert]);
 
     // Auto remove after duration
@@ -63,51 +54,27 @@ export const AlertProvider = ({ children }) => {
     }
 
     return id;
-  }, []);
-
-  const removeAlert = useCallback((id) => {
-    setAlerts(prev => prev.filter(alert => alert.id !== id));
-  }, []);
+  }, [removeAlert]);
 
   const clearAlerts = useCallback(() => {
     setAlerts([]);
   }, []);
 
-  // Predefined alert methods
+  // Predefined alert helpers
   const showSuccess = useCallback((message, title = 'Success', options = {}) => {
-    return addAlert({
-      type: 'success',
-      title,
-      message,
-      ...options,
-    });
+    return addAlert({ type: 'success', title, message, ...options });
   }, [addAlert]);
 
   const showError = useCallback((message, title = 'Error', options = {}) => {
-    return addAlert({
-      type: 'error',
-      title,
-      message,
-      ...options,
-    });
+    return addAlert({ type: 'error', title, message, ...options });
   }, [addAlert]);
 
   const showWarning = useCallback((message, title = 'Warning', options = {}) => {
-    return addAlert({
-      type: 'warning',
-      title,
-      message,
-      ...options,
-    });
+    return addAlert({ type: 'warning', title, message, ...options });
   }, [addAlert]);
 
   const showInfo = useCallback((message, title = 'Information', options = {}) => {
-    return addAlert({
-      type: 'info',
-      title,
-      message,
-      ...options,
-    });
+    return addAlert({ type: 'info', title, message, ...options });
   }, [addAlert]);
 
   const showLoading = useCallback((message, title = 'Loading', options = {}) => {
@@ -115,7 +82,7 @@ export const AlertProvider = ({ children }) => {
       type: 'loading',
       title,
       message,
-      duration: 0, // Don't auto-remove loading alerts
+      duration: 0, // persistent
       ...options,
     });
   }, [addAlert]);
