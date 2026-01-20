@@ -1,7 +1,6 @@
 // components/auth/ResetPassword.jsx
 import React, { useState, useEffect } from 'react';
 import '../../styles/Auth.css';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 const ResetPassword = ({ email, onBack, onReset }) => {
   const [formData, setFormData] = useState({
