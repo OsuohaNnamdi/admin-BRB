@@ -1,6 +1,7 @@
 // components/auth/ResetPassword.jsx
 import React, { useState, useEffect } from 'react';
 import '../../styles/Auth.css';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ResetPassword = ({ email, onBack, onReset }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const ResetPassword = ({ email, onBack, onReset }) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isReset, setIsReset] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
