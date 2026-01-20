@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/CouponList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -21,8 +20,7 @@ const CouponList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [discountTypeFilter, setDiscountTypeFilter] = useState('all');
-  const { showSuccess, showError, showWarning, showInfo, showLoading, removeAlert } = useAlert();
-
+  const { showSuccess, showError, showWarning, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -32,8 +30,8 @@ const CouponList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchCoupons = async () => {
+  // API functions with useCallback
+  const fetchCoupons = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminCoupons();
@@ -50,7 +48,7 @@ const CouponList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   const deleteCoupon = async (id) => {
     try {
@@ -75,7 +73,7 @@ const CouponList = () => {
 
   useEffect(() => {
     fetchCoupons();
-  }, []);
+  }, [fetchCoupons]);
 
   const handleEdit = (coupon) => {
     setSelectedCoupon(coupon);
@@ -104,15 +102,14 @@ const CouponList = () => {
         'Processing'
       );
       
-      let result;
       if (selectedCoupon) {
         // Update existing coupon
-        result = await ApiService.updateCoupon(selectedCoupon.id, couponData);
+        await ApiService.updateCoupon(selectedCoupon.id, couponData);
         removeAlert(loadingAlertId);
         showSuccess('Coupon updated successfully!', 'Update Successful');
       } else {
         // Create new coupon
-        result = await ApiService.createCoupon(couponData);
+        await ApiService.createCoupon(couponData);
         removeAlert(loadingAlertId);
         showSuccess('Coupon created successfully!', 'Create Successful');
       }
@@ -159,9 +156,9 @@ const CouponList = () => {
     try {
       const loadingAlertId = showLoading('Sending coupon...', 'Processing');
       
-      const result = await sendCouponToEmails(couponId, emails);
+      await sendCouponToEmails(couponId, emails);
       removeAlert(loadingAlertId);
-      showSuccess(`Coupon sent to ${result.message || 'recipients'}`, 'Send Successful');
+      showSuccess(`Coupon sent successfully!`, 'Send Successful');
       
       setSendModalOpen(false);
       setSelectedCoupon(null);
@@ -357,7 +354,7 @@ const CouponList = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="search-input"
                     />
-                    <span className="search-icon">&#128269;</span>
+                    <span className="search-icon">🔍</span>
                   </div>
                   
                   <div className="filter-controls">
@@ -401,19 +398,19 @@ const CouponList = () => {
                     {searchTerm && (
                       <span className="filter-tag">
                         Search: "{searchTerm}"
-                        <button onClick={() => setSearchTerm('')}>&times;</button>
+                        <button onClick={() => setSearchTerm('')}>×</button>
                       </span>
                     )}
                     {statusFilter !== 'all' && (
                       <span className="filter-tag">
                         Status: {statusFilter}
-                        <button onClick={() => setStatusFilter('all')}>&times;</button>
+                        <button onClick={() => setStatusFilter('all')}>×</button>
                       </span>
                     )}
                     {discountTypeFilter !== 'all' && (
                       <span className="filter-tag">
                         Type: {discountTypeFilter}
-                        <button onClick={() => setDiscountTypeFilter('all')}>&times;</button>
+                        <button onClick={() => setDiscountTypeFilter('all')}>×</button>
                       </span>
                     )}
                   </div>
@@ -427,7 +424,7 @@ const CouponList = () => {
                     </div>
                   ) : filteredCoupons.length === 0 ? (
                     <div className="empty-state">
-                      <div className="empty-icon">&#127915;</div>
+                      <div className="empty-icon">🎫</div>
                       <h3>No coupons found</h3>
                       <p>
                         {hasActiveFilters 
@@ -524,21 +521,21 @@ const CouponList = () => {
                                     onClick={() => handleSend(coupon)}
                                     title="Send to customers"
                                   >
-                                    &#128231;
+                                    📧
                                   </button>
                                   <button 
                                     className="action-btn edit-btn"
                                     onClick={() => handleEdit(coupon)}
                                     title="Edit coupon"
                                   >
-                                    &#9998;
+                                    ✏️
                                   </button>
                                   <button 
                                     className="action-btn delete-btn"
                                     onClick={() => handleDelete(coupon)}
                                     title="Delete coupon"
                                   >
-                                    &#128465;
+                                    🗑️
                                   </button>
                                 </div>
                               </td>
@@ -603,7 +600,7 @@ const CouponList = () => {
               <h3>Delete Coupon</h3>
             </div>
             <div className="delete-modal-content">
-              <div className="warning-icon">&#9888;</div>
+              <div className="warning-icon">⚠️</div>
               <p>
                 Are you sure you want to delete coupon <strong>"{selectedCoupon?.code}"</strong>? 
                 This action cannot be undone and may affect active orders.
