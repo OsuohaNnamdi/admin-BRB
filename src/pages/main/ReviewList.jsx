@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/ReviewList.css';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -21,7 +21,7 @@ const ReviewList = () => {
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 20;
 
-  const { showSuccess, showError, showWarning, showLoading, removeAlert } = useAlert();
+  const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -31,8 +31,8 @@ const ReviewList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchReviews = async (page = 1, filters = {}) => {
+  // API functions with useCallback
+  const fetchReviews = useCallback(async (page = 1, filters = {}) => {
     setLoading(true);
     try {
       const params = {
@@ -70,7 +70,7 @@ const ReviewList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageSize, showError]);
 
   const deleteReview = async (id) => {
     try {
@@ -84,7 +84,7 @@ const ReviewList = () => {
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [fetchReviews]);
 
   const handleDelete = (review) => {
     setSelectedReview(review);
@@ -130,7 +130,7 @@ const ReviewList = () => {
   };
 
   // Filter functions
-  const getFilters = () => {
+  const getFilters = useCallback(() => {
     const filters = {};
     
     if (searchTerm) {
@@ -146,26 +146,26 @@ const ReviewList = () => {
     }
     
     return filters;
-  };
+  }, [searchTerm, ratingFilter, dateFilter]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     setCurrentPage(1);
     fetchReviews(1, getFilters());
-  };
+  }, [fetchReviews, getFilters]);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setRatingFilter('');
     setDateFilter('');
     setCurrentPage(1);
     fetchReviews(1);
-  };
+  }, [fetchReviews]);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
     setCurrentPage(page);
     fetchReviews(page, getFilters());
-  };
+  }, [currentPage, totalPages, fetchReviews, getFilters]);
 
   const handleRatingFilterChange = (e) => {
     setRatingFilter(e.target.value);
@@ -230,7 +230,7 @@ const ReviewList = () => {
   const hasActiveFilters = searchTerm || ratingFilter || dateFilter;
 
   // Generate pagination items
-  const getPaginationItems = () => {
+  const getPaginationItems = useCallback(() => {
     const items = [];
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
@@ -255,7 +255,7 @@ const ReviewList = () => {
     }
     
     return items;
-  };
+  }, [currentPage, totalPages]);
 
   return (
     <div className="__variable_9eb1a5 body">
