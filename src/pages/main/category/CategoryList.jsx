@@ -1,5 +1,5 @@
 // pages/main/CategoryList.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/CategoryList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -37,7 +37,7 @@ const CategoryList = () => {
   };
 
   // API functions
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     let loadingAlertId = null;
     
@@ -99,7 +99,7 @@ const CategoryList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showLoading, showError, removeAlert]);
 
   const createCategory = async (categoryData) => {
     try {
@@ -135,7 +135,7 @@ const CategoryList = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   const handleEdit = (category) => {
     setSelectedCategory(category);
