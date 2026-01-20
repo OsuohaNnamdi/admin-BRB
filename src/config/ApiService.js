@@ -217,4 +217,4 @@ async createProduct(productData) {
   }
 }
 
-export default ApiService();
+export default new ApiService();
