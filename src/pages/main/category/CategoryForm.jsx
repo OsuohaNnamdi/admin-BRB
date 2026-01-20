@@ -154,13 +154,7 @@ const CategoryForm = () => {
   };
 
   const handleReset = () => {
-    // Show confirmation using alert
-    const confirmReset = () => {
-      setFormData({ name: '', slug: '' });
-      showInfo('Form has been reset successfully', 'Form Reset', { duration: 3000 });
-    };
-
-    // Use warning alert for confirmation
+    // Show warning alert for confirmation
     showWarning(
       'Are you sure you want to reset the form? All entered data will be lost.',
       'Confirm Reset',
@@ -168,12 +162,10 @@ const CategoryForm = () => {
         duration: 0, // Don't auto-dismiss
         dismissible: true,
         onClose: () => console.log('Reset cancelled'),
-        // You might want to add custom buttons for confirmation
-        // For now, we'll use a simple approach
       }
     );
 
-    // Simple confirmation dialog (you can enhance this with a custom alert later)
+    // Simple confirmation dialog
     if (window.confirm('Are you sure you want to reset the form? All data will be lost.')) {
       setFormData({ name: '', slug: '' });
       showInfo('Form has been reset successfully', 'Form Reset', { duration: 3000 });
