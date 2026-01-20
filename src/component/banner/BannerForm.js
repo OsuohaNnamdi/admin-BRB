@@ -68,6 +68,7 @@ const BannerForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ✅ FIX 3: Handle input change (keeping this one as it's likely used in your JSX)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -77,6 +78,7 @@ const BannerForm = () => {
     }
   };
 
+  // ✅ FIX 4: Handle image change (keeping this one as it's likely used in your JSX)
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -106,6 +108,7 @@ const BannerForm = () => {
     setErrors(prev => ({ ...prev, image: '' }));
   };
 
+  // ✅ FIX 5: Remove image function (keeping this one as it's likely used in your JSX)
   const removeImage = () => {
     if (formData.imagePreview) {
       URL.revokeObjectURL(formData.imagePreview);
@@ -160,7 +163,6 @@ const BannerForm = () => {
         'Processing'
       );
 
-      // ✅ FIX 2: removed unused `result`
       if (isEditMode) {
         await updateBanner();
       } else {
@@ -182,7 +184,11 @@ const BannerForm = () => {
         let errorMessage = 'Failed to save banner. ';
 
         Object.keys(backendErrors).forEach(key => {
-          errorMessage += `${key}: ${backendErrors[key]} `;
+          if (Array.isArray(backendErrors[key])) {
+            errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
+          } else {
+            errorMessage += `${key}: ${backendErrors[key]} `;
+          }
         });
 
         showError(errorMessage.trim(), 'Save Failed');
@@ -211,13 +217,108 @@ const BannerForm = () => {
 
   return (
     <div className="banner-form-container">
-      {/* JSX unchanged – your UI stays exactly the same */}
-      {/* Submit + Cancel buttons */}
-      <form onSubmit={handleSubmit}>
-        <button type="button" onClick={handleCancel}>Cancel</button>
-        <button type="submit" disabled={loading}>
-          {isEditMode ? 'Update Banner' : 'Create Banner'}
-        </button>
+      <div className="form-header">
+        <h1>{isEditMode ? 'Edit Banner' : 'Create New Banner'}</h1>
+        <p>{isEditMode ? 'Update banner details' : 'Add a new promotional banner'}</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="banner-form">
+        <div className="form-group">
+          <label htmlFor="title">Title *</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className={errors.title ? 'error' : ''}
+            placeholder="Enter banner title"
+          />
+          {errors.title && <span className="error-message">{errors.title}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="text">Description</label>
+          <textarea
+            id="text"
+            name="text"
+            value={formData.text}
+            onChange={handleInputChange}
+            rows="4"
+            placeholder="Enter banner description (optional)"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="image">Banner Image {!isEditMode && '*'}</label>
+          
+          {formData.imagePreview ? (
+            <div className="image-preview-container">
+              <img 
+                src={formData.imagePreview} 
+                alt="Preview" 
+                className="image-preview"
+              />
+              <button 
+                type="button" 
+                onClick={removeImage}
+                className="remove-image-btn"
+              >
+                Remove Image
+              </button>
+            </div>
+          ) : (
+            <div className="image-upload-area">
+              <label htmlFor="image-upload" className="upload-label">
+                <div className="upload-icon">📁</div>
+                <div className="upload-text">
+                  <p>Click to upload image</p>
+                  <p className="upload-hint">PNG, JPG, GIF, WebP up to 5MB</p>
+                </div>
+              </label>
+              <input
+                type="file"
+                id="image-upload"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden-input"
+              />
+            </div>
+          )}
+          
+          {errors.image && <span className="error-message">{errors.image}</span>}
+          
+          {isEditMode && formData.imagePreview && !formData.image && (
+            <p className="info-text">
+              Current image will be kept unless you upload a new one.
+            </p>
+          )}
+        </div>
+
+        <div className="form-actions">
+          <button 
+            type="button" 
+            onClick={handleCancel}
+            className="btn-secondary"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="loading-spinner-small"></span>
+                {isEditMode ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              isEditMode ? 'Update Banner' : 'Create Banner'
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );
