@@ -214,11 +214,11 @@ const router = createBrowserRouter(
         </ProtectedLayout>
       } />
 
-      <Route path="/coupon" element={
-        <ProtectedLayout>
-          <CouponList />
-        </ProtectedLayout>
-      } />
+      // <Route path="/coupon" element={
+      //   <ProtectedLayout>
+      //     <CouponList />
+      //   </ProtectedLayout>
+      // } />
       
      
       <Route path="/add-banner" element={
