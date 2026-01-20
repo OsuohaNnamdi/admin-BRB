@@ -12,7 +12,7 @@ function App() {
     <AlertProvider>
       <AuthProvider>
         <div className="App">
-          // <RouterProvider router={router} />
+          
           <AlertContainer />
         </div>
       </AuthProvider>
