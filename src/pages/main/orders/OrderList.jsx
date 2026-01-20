@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/OrderList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -35,14 +35,12 @@ const OrderList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions - Updated to use context
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminOrders();
       console.log('Orders fetched:', response.data);
-      
-      // Handle different response formats
+
       const ordersData = response.data.orders || response.data || [];
       updateOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (error) {
@@ -56,12 +54,14 @@ const OrderList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, updateOrders, showError]);
+
 
   // Updated to match the API endpoint structure and update context
   const updateOrderStatusAPI = async (orderId, newStatus) => {
+    let loadingAlertId;
     try {
-      const loadingAlertId = showLoading('Updating order status...', 'Processing');
+      loadingAlertId = showLoading('Updating order status...', 'Processing');
       
       // Create the status data object as expected by the API
       const statusData = {
@@ -73,13 +73,15 @@ const OrderList = () => {
       // Update the order status in context
       updateOrderStatus(orderId, newStatus);
       
-      removeAlert(loadingAlertId);
+      if (loadingAlertId) {
+        removeAlert(loadingAlertId);
+      }
       showSuccess('Order status updated successfully!', 'Update Successful');
-       if (loadingAlertId) {
-      removeAlert(loadingAlertId);
-    }
     } catch (error) {
       console.error('Error updating order status:', error);
+      if (loadingAlertId) {
+        removeAlert(loadingAlertId);
+      }
       handleUpdateError(error);
     } 
   };
@@ -124,7 +126,7 @@ const OrderList = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   // Filter orders based on search term and filters
   const filteredOrders = orders.filter(order => {
