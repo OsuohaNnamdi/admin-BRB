@@ -119,31 +119,29 @@ class ApiClient {
     return instance.get(url, config);
   }
 
-// ApiClient.js - Update the post method to handle FormData
-post(url, data, config = {}, useToken = false) {
-  const instance = useToken ? this.axiosInstanceWithToken : this.axiosInstance;
-  
-  // If data is FormData, don't set Content-Type header (let browser set it with boundary)
-  if (data instanceof FormData) {
-    const formDataConfig = {
-      ...config,
-      headers: {
-        ...config.headers,
-        'Content-Type': undefined, // Let browser set the content type with boundary
-      }
-    };
-    return instance.post(url, data, formDataConfig);
+  // Updated post method to handle FormData
+  post(url, data, config = {}, useToken = false) {
+    const instance = useToken ? this.axiosInstanceWithToken : this.axiosInstance;
+    
+    // If data is FormData, don't set Content-Type header (let browser set it with boundary)
+    if (data instanceof FormData) {
+      const formDataConfig = {
+        ...config,
+        headers: {
+          ...config.headers,
+          'Content-Type': undefined, // Let browser set the content type with boundary
+        }
+      };
+      return instance.post(url, data, formDataConfig);
+    }
+    
+    return instance.post(url, data, config);
   }
-  
-  return instance.post(url, data, config);
-}
 
   put(url, data, config = {}, useToken = false) {
     const instance = useToken ? this.axiosInstanceWithToken : this.axiosInstance;
     return instance.put(url, data, config);
   }
-
-  
 
   patch(url, data, config = {}, useToken = false) {
     const instance = useToken ? this.axiosInstanceWithToken : this.axiosInstance;
@@ -177,4 +175,7 @@ post(url, data, config = {}, useToken = false) {
   }
 }
 
-export default new ApiClient();
+// ✅ FIX: Create a named instance before exporting
+const apiClientInstance = new ApiClient();
+
+export default apiClientInstance;
