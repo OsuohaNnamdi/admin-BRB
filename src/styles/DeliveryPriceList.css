@@ -1,0 +1,530 @@
+/* styles/DeliveryPriceList.css */
+.delivery-price-list-container {
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: calc(100vh - 200px);
+  box-sizing: border-box;
+}
+
+.delivery-price-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.delivery-price-list-header .header-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.delivery-price-list-header .header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.add-delivery-price-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+  white-space: nowrap;
+}
+
+.add-delivery-price-btn:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+}
+
+.delivery-price-list-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.delivery-price-list-content {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+
+.empty-state p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.empty-state-btn {
+  margin-top: 1.5rem;
+}
+
+.delivery-prices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.delivery-price-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.delivery-price-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.delivery-price-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.location-info {
+  flex: 1;
+}
+
+.city-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.state-name {
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: block;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-badge.active {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.status-badge.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.delivery-price-card-body {
+  margin-bottom: 1.5rem;
+}
+
+.price-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.price-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.price-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #8b5cf6;
+}
+
+.delivery-price-card-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.delivery-price-card-actions .action-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.edit-btn {
+  background: #f0f9ff;
+  color: #0ea5e9;
+  border: 1px solid #e0f2fe;
+}
+
+.action-btn.edit-btn:hover {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+}
+
+.action-btn.delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.delivery-price-list-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.delete-modal {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.delete-modal-header h3 {
+  margin: 0 0 1rem 0;
+  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.delete-modal-content {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.warning-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.delete-modal-content p {
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.warning-text {
+  color: #ef4444;
+  font-weight: 500;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-secondary,
+.btn-danger {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.delete-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .delivery-price-list-container {
+    padding: 1rem;
+  }
+  
+  .delivery-price-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .add-delivery-price-btn {
+    width: 100%;
+  }
+  
+  .delivery-price-list-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-box {
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .filter-controls {
+    justify-content: space-between;
+  }
+  
+  .filter-select {
+    flex: 1;
+  }
+  
+  .delivery-prices-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .delivery-price-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .delivery-price-card-actions {
+    flex-direction: column;
+  }
+  
+  .delivery-price-list-footer {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .delete-modal {
+    padding: 1.5rem;
+  }
+  
+  .delete-modal-actions {
+    flex-direction: column;
+  }
+  
+  .delete-modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .delivery-price-list-container {
+    padding: 0.75rem;
+  }
+  
+  .delivery-price-list-header .header-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .delivery-prices-grid {
+    padding: 0.75rem;
+  }
+  
+  .delivery-price-card {
+    padding: 1.25rem;
+  }
+  
+  .price-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .price-value {
+    font-size: 1.25rem;
+  }
+}

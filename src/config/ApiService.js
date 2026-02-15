@@ -75,13 +75,14 @@ class ApiService {
     return apiClient.delete(`/admin/products/${id}/`, {}, true);
   }
 
-  // Admin Categories Management
+ // Add these to your ApiService.js
+
+// Admin Categories Management
   async getAdminCategories() {
     return apiClient.get('/admin/categories', {}, true);
   }
 
   async createCategory(categoryData) {
-    console.log(categoryData)
     return apiClient.post('/admin/categories/', categoryData, {}, true);
   }
 
@@ -91,6 +92,48 @@ class ApiService {
 
   async deleteCategory(id) {
     return apiClient.delete(`/admin/categories/${id}`, {}, true);
+  }
+
+  // Admin Subcategories Management
+  async getAdminSubcategories() {
+    return apiClient.get('/admin/subcategories', {}, true);
+  }
+
+  async createSubcategory(subcategoryData) {
+    return apiClient.post('/admin/subcategories/', subcategoryData, {}, true);
+  }
+
+  async updateSubcategory(id, subcategoryData) {
+    return apiClient.put(`/admin/subcategories/${id}/`, subcategoryData, {}, true);
+  }
+
+  async deleteSubcategory(id) {
+    return apiClient.delete(`/admin/subcategories/${id}`, {}, true);
+  }
+
+  async getAdminDeliveryPrices() {
+    return apiClient.get('/admin/delivery-prices', {}, true);
+  }
+
+  async createDeliveryPrice(priceData) {
+    console.log(priceData);
+    return apiClient.post('/admin/delivery-prices/', priceData, {}, true);
+  }
+
+  async getDeliveryPrice(id) {
+    return apiClient.get(`/admin/delivery-prices/${id}/`, {}, true);
+  }
+
+  async updateDeliveryPrice(id, priceData) {
+    return apiClient.put(`/admin/delivery-prices/${id}/`, priceData, {}, true);
+  }
+
+  async patchDeliveryPrice(id, priceData) {
+    return apiClient.patch(`/admin/delivery-prices/${id}/`, priceData, {}, true);
+  }
+
+  async deleteDeliveryPrice(id) {
+    return apiClient.delete(`/admin/delivery-prices/${id}/`, {}, true);
   }
 
   async getAdminOrders() {

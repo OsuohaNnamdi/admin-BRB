@@ -78,6 +78,15 @@ export const adminRoutes = [
     parent: "Categories"
   },
   {
+    title: "Add SubCategory",
+    path: "/add-subcategory",
+    icon: "➕",
+    description: "Create new category",
+    category: "Categories",
+    keywords: ["add category", "create category", "new category"],
+    parent: "Categories"
+  },
+  {
     title: "List Categories",
     path: "/category",
     icon: "📋",

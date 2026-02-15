@@ -4,19 +4,14 @@ import Header from '../Header';
 import Sidebar from '../Sidebar';
 import SettingsPanel from '../../../component/SettingsPanel';
 import CategoryForm from './CategoryForm';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAlert } from '../../../context/alert/AlertContext';
 
-const AddCategory = () => {
+const AddSubcategory = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { showSuccess } = useAlert();
-
-  // Check if we're adding a subcategory from query params
-  const queryParams = new URLSearchParams(location.search);
-  const mode = queryParams.get('type') === 'subcategory' ? 'subcategory' : 'category';
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -28,11 +23,10 @@ const AddCategory = () => {
 
   const handleSuccess = (data) => {
     showSuccess(
-      mode === 'category' ? 'Category created successfully!' : 'Subcategory created successfully!',
+      'Subcategory created successfully!',
       'Success',
       { duration: 3000 }
     );
-    // Navigate back to the list
     navigate('/admin/categories');
   };
 
@@ -59,7 +53,7 @@ const AddCategory = () => {
                 onSettingsClick={() => setSettingsOpen(true)} 
               />
               <CategoryForm 
-                mode={mode}
+                mode="subcategory"
                 onSuccess={handleSuccess}
                 onCancel={handleCancel}
               />
@@ -73,4 +67,4 @@ const AddCategory = () => {
   );
 };
 
-export default AddCategory;
+export default AddSubcategory;

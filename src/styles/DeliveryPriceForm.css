@@ -1,0 +1,398 @@
+/* styles/DeliveryPriceForm.css */
+.delivery-price-page-container {
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: calc(100vh - 200px);
+  box-sizing: border-box;
+}
+
+.delivery-price-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.delivery-price-page-header .header-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.delivery-price-page-header .header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.back-btn {
+  padding: 0.75rem 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+.delivery-price-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delivery-price-form {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delivery-price-form-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.delivery-price-form-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.delivery-price-form-section {
+  margin-bottom: 2.5rem;
+}
+
+.delivery-price-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.delivery-price-form-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delivery-price-form-section h3::before {
+  content: "📍";
+  font-size: 1.1em;
+}
+
+.delivery-price-form-section:last-child h3::before {
+  content: "💰";
+}
+
+.delivery-price-form-group {
+  margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delivery-price-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.delivery-price-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  word-wrap: break-word;
+}
+
+.delivery-price-label.required::after {
+  content: "*";
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.delivery-price-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.delivery-price-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.delivery-price-input::placeholder {
+  color: #9ca3af;
+}
+
+.delivery-price-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+/* Input with currency */
+.delivery-price-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.delivery-price-currency {
+  position: absolute;
+  left: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+  z-index: 1;
+}
+
+.delivery-price-input.with-currency {
+  padding-left: 2.5rem;
+}
+
+/* Toggle Switch */
+.delivery-price-toggle-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+}
+
+.delivery-price-toggle {
+  position: relative;
+  display: inline-block;
+}
+
+.delivery-price-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.delivery-price-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.delivery-price-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.delivery-price-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .delivery-price-toggle-slider {
+  background-color: #10b981;
+}
+
+input:checked + .delivery-price-toggle-slider:before {
+  transform: translateX(26px);
+}
+
+input:disabled + .delivery-price-toggle-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Helper Text */
+.delivery-price-helper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border-left: 3px solid #8b5cf6;
+}
+
+.delivery-price-helper-icon {
+  font-size: 0.875rem;
+  color: #8b5cf6;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.delivery-price-helper-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+/* Form Actions */
+.delivery-price-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delivery-price-btn-primary,
+.delivery-price-btn-secondary {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.delivery-price-btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.delivery-price-btn-primary:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+}
+
+.delivery-price-btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.delivery-price-btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.delivery-price-btn-primary:disabled,
+.delivery-price-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading Spinner */
+.delivery-price-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .delivery-price-page-container {
+    padding: 1rem;
+  }
+  
+  .delivery-price-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .delivery-price-page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .back-btn {
+    width: 100%;
+  }
+  
+  .delivery-price-form-card {
+    padding: 1.5rem;
+  }
+  
+  .delivery-price-toggle-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .delivery-price-form-actions {
+    flex-direction: column;
+  }
+  
+  .delivery-price-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .delivery-price-page-container {
+    padding: 0.75rem;
+  }
+  
+  .delivery-price-form-card {
+    padding: 1.25rem;
+  }
+  
+  .delivery-price-input {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+}

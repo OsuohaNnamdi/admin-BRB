@@ -587,3 +587,95 @@
     padding: 0.75rem 0.5rem;
   }
 }
+/* Update these color values in CategoryList.css */
+
+/* Primary green color for buttons and accents */
+:root {
+  --primary-green: #10b981;
+  --primary-green-dark: #059669;
+  --primary-green-light: #d1fae5;
+}
+
+/* Update add-category-btn */
+.add-category-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.add-category-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Update add-subcategory-btn (use a lighter green for distinction) */
+.add-subcategory-btn {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 2px 4px rgba(52, 211, 153, 0.3);
+}
+
+.add-subcategory-btn:hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Update search input focus */
+.search-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Update filter select focus */
+.filter-select:focus {
+  border-color: #10b981;
+}
+
+/* Update loading spinner */
+.loading-spinner {
+  border-top: 3px solid #10b981;
+}
+
+/* Update expand toggle hover */
+.expand-toggle.has-sub:hover {
+  color: #10b981;
+}
+
+/* Update stat number */
+.stat-number {
+  color: #10b981;
+}
+
+/* Update edit button colors */
+.action-btn.edit-btn {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.action-btn.edit-btn:hover {
+  background: #a7f3d0;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+/* Keep delete button as red for warning */
+.action-btn.delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fee2e2;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+/* Update status badge active */
+.status-badge.active {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Keep inactive badge as is */
+.status-badge.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}

@@ -1,32 +1,32 @@
-// pages/main/CategoryList.js
 import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/CategoryList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import SettingsPanel from '../../../component/SettingsPanel';
 import CategoryModal from '../../../component/CategoryModal';
+import SubcategoryModal from '../../../component/SubcategoryModal';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
+import { useNavigate } from 'react-router-dom';
 
 const CategoryList = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [subcategoryModalOpen, setSubcategoryModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteType, setDeleteType] = useState('category'); // 'category' or 'subcategory'
+  const [expandedCategories, setExpandedCategories] = useState({});
 
-  // Use the alert context instead of local state
-  const { 
-    showSuccess, 
-    showError, 
-    showWarning, 
-    showLoading,
-    removeAlert 
-  } = useAlert();
+  const navigate = useNavigate();
+  const { showSuccess, showError, showWarning, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -36,300 +36,196 @@ const CategoryList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions
-  const fetchCategories = useCallback(async () => {
+  const toggleCategoryExpand = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+  // Fetch categories and subcategories
+  const fetchData = useCallback(async () => {
     setLoading(true);
     let loadingAlertId = null;
     
     try {
-      // Show loading alert
       loadingAlertId = showLoading('Loading categories...', 'Fetching Data');
       
-      const response = await ApiService.getAdminCategories();
-      console.log('Categories fetched:', response.data);
-      
-      // Transform API response to match component structure
-      const categoriesData = response.data.categories || response.data || [];
+      // Fetch categories
+      const categoriesResponse = await ApiService.getAdminCategories();
+      const categoriesData = categoriesResponse.data.categories || categoriesResponse.data || [];
       setCategories(categoriesData);
+
+      // Fetch subcategories
+      const subcategoriesResponse = await ApiService.getAdminSubcategories();
+      const subcategoriesData = subcategoriesResponse.data.subcategories || subcategoriesResponse.data || [];
+      setSubcategories(subcategoriesData);
+
+      // Initialize expanded state for categories with subcategories
+      const expanded = {};
+      subcategoriesData.forEach(sub => {
+        if (sub.category?.id) {
+          expanded[sub.category.id] = true;
+        }
+      });
+      setExpandedCategories(expanded);
       
-      // Remove loading alert on success
       if (loadingAlertId) removeAlert(loadingAlertId);
       
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching data:', error);
       
-      // Remove loading alert on error
       if (loadingAlertId) removeAlert(loadingAlertId);
       
-      // Show appropriate error alert
       if (error.response?.status === 401) {
-        showError(
-          'Your session has expired. Please login again to view categories.',
-          'Authentication Required',
-          { duration: 6000 }
-        );
+        showError('Session expired. Please login again.', 'Authentication Required', { duration: 6000 });
       } else if (error.response?.status === 403) {
-        showError(
-          'You do not have permission to view categories.',
-          'Access Denied',
-          { duration: 6000 }
-        );
-      } else if (error.message === 'Network Error') {
-        showError(
-          'Unable to connect to the server. Please check your internet connection.',
-          'Connection Error',
-          { duration: 6000 }
-        );
-      } else if (error.response?.status >= 500) {
-        showError(
-          'Our servers are currently experiencing issues. Please try again later.',
-          'Server Error',
-          { duration: 6000 }
-        );
+        showError('You do not have permission to view categories.', 'Access Denied', { duration: 6000 });
       } else {
-        showError(
-          'Failed to load categories. Please try refreshing the page.',
-          'Load Failed',
-          { duration: 5000 }
-        );
+        showError('Failed to load categories. Please try again.', 'Load Failed', { duration: 5000 });
       }
       
-      // Set empty array as fallback
       setCategories([]);
+      setSubcategories([]);
     } finally {
       setLoading(false);
     }
   }, [showLoading, showError, removeAlert]);
 
-  const createCategory = async (categoryData) => {
-    try {
-      const response = await ApiService.createCategory(categoryData);
-      console.log('Category created:', response.data);
-      return response.data.category || response.data;
-    } catch (error) {
-      console.error('Error creating category:', error);
-      throw error;
-    }
-  };
-
-  const updateCategory = async (id, categoryData) => {
-    try {
-      const response = await ApiService.updateCategory(id, categoryData);
-      console.log('Category updated:', response.data);
-      return response.data.category || response.data;
-    } catch (error) {
-      console.error('Error updating category:', error);
-      throw error;
-    }
-  };
-
-  const deleteCategory = async (id) => {
-    try {
-      await ApiService.deleteCategory(id);
-      console.log('Category deleted:', id);
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchData();
+  }, [fetchData]);
 
-  const handleEdit = (category) => {
-    setSelectedCategory(category);
-    setModalOpen(true);
-  };
-
-  const handleDelete = (category) => {
-    setSelectedCategory(category);
-    setDeleteModalOpen(true);
-  };
-
-  const handleAdd = () => {
+  const handleAddCategory = () => {
     setSelectedCategory(null);
-    setModalOpen(true);
+    setCategoryModalOpen(true);
   };
 
-  const handleModalSubmit = async (categoryData) => {
-    let loadingAlertId = null;
-    
+  const handleAddSubcategory = () => {
+    setSelectedSubcategory(null);
+    setSubcategoryModalOpen(true);
+  };
+
+  const handleEditCategory = (category) => {
+    setSelectedCategory(category);
+    setCategoryModalOpen(true);
+  };
+
+  const handleEditSubcategory = (subcategory) => {
+    setSelectedSubcategory(subcategory);
+    setSubcategoryModalOpen(true);
+  };
+
+  const handleCategorySubmit = async (categoryData) => {
     try {
-      // Show loading alert
-      loadingAlertId = showLoading(
-        selectedCategory ? 'Updating category...' : 'Creating new category...', 
-        'Processing'
-      );
-      
       if (selectedCategory) {
-        // Update existing category
-        await updateCategory(selectedCategory.id, categoryData);
-        
-        // Remove loading and show success
-        if (loadingAlertId) removeAlert(loadingAlertId);
-        showSuccess('Category updated successfully!', 'Update Successful', { duration: 4000 });
+        await ApiService.updateCategory(selectedCategory.id, categoryData);
+        showSuccess('Category updated successfully!', 'Success', { duration: 3000 });
       } else {
-        // Create new category
-        await createCategory(categoryData);
-        
-        // Remove loading and show success
-        if (loadingAlertId) removeAlert(loadingAlertId);
-        showSuccess('Category created successfully!', 'Creation Successful', { duration: 4000 });
+        await ApiService.createCategory(categoryData);
+        showSuccess('Category created successfully!', 'Success', { duration: 3000 });
       }
       
-      // Refresh categories list
-      await fetchCategories();
-      
-      setModalOpen(false);
+      await fetchData();
+      setCategoryModalOpen(false);
       setSelectedCategory(null);
-      
     } catch (error) {
       console.error('Error saving category:', error);
       
-      // Remove loading alert on error
-      if (loadingAlertId) removeAlert(loadingAlertId);
-      
-      // Handle different error scenarios with appropriate alert types
-      if (error.response?.data?.error) {
-        showError(
-          error.response.data.error, 
-          selectedCategory ? 'Update Failed' : 'Creation Failed',
-          { duration: 6000 }
-        );
-      } else if (error.response?.status === 400) {
-        showError(
-          'Invalid category data. Please check your inputs and try again.',
-          'Validation Error',
-          { duration: 5000 }
-        );
-      } else if (error.response?.status === 401) {
-        showError(
-          'Your session has expired. Please login again to continue.',
-          'Authentication Required',
-          { duration: 6000 }
-        );
-      } else if (error.response?.status === 403) {
-        showError(
-          'You do not have permission to manage categories.',
-          'Access Denied',
-          { duration: 6000 }
-        );
-      } else if (error.response?.status === 404 && selectedCategory) {
-        showError(
-          'Category not found. It may have been deleted by another user.',
-          'Category Not Found',
-          { duration: 5000 }
-        );
-      } else if (error.response?.status === 409) {
-        showWarning(
-          'A category with this name or slug already exists. Please use a different name.',
-          'Duplicate Category',
-          { duration: 6000 }
-        );
-      } else if (error.message === 'Network Error') {
-        showError(
-          'Unable to connect to the server. Please check your internet connection.',
-          'Connection Error',
-          { duration: 6000 }
-        );
-      } else if (error.response?.status >= 500) {
-        showError(
-          'Our servers are currently experiencing issues. Please try again later.',
-          'Server Error',
-          { duration: 6000 }
-        );
+      if (error.response?.status === 409) {
+        showError('A category with this name or slug already exists.', 'Duplicate', { duration: 5000 });
       } else {
-        showError(
-          `Failed to ${selectedCategory ? 'update' : 'create'} category. Please try again.`,
-          'Operation Failed',
-          { duration: 5000 }
-        );
+        showError('Failed to save category. Please try again.', 'Error', { duration: 5000 });
       }
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (selectedCategory) {
-      setDeleteLoading(true);
-      let loadingAlertId = null;
+  const handleSubcategorySubmit = async (subcategoryData) => {
+    try {
+      if (selectedSubcategory) {
+        await ApiService.updateSubcategory(selectedSubcategory.id, subcategoryData);
+        showSuccess('Subcategory updated successfully!', 'Success', { duration: 3000 });
+      } else {
+        await ApiService.createSubcategory(subcategoryData);
+        showSuccess('Subcategory created successfully!', 'Success', { duration: 3000 });
+      }
       
-      try {
-        // Show loading alert for deletion
-        loadingAlertId = showLoading('Deleting category...', 'Processing');
-        
-        await deleteCategory(selectedCategory.id);
-        
-        // Remove loading and show success
-        if (loadingAlertId) removeAlert(loadingAlertId);
-        showSuccess('Category deleted successfully!', 'Deletion Successful', { duration: 4000 });
-        
-        // Refresh categories list
-        await fetchCategories();
-        
-        setDeleteModalOpen(false);
-        setSelectedCategory(null);
-        
-      } catch (error) {
-        console.error('Error deleting category:', error);
-        
-        // Remove loading alert on error
-        if (loadingAlertId) removeAlert(loadingAlertId);
-        
-        // Handle different error scenarios with appropriate alert types
-        if (error.response?.data?.error) {
-          showError(
-            error.response.data.error, 
-            'Deletion Failed',
-            { duration: 6000 }
-          );
-        } else if (error.response?.status === 400) {
-          showWarning(
-            'Cannot delete this category. It may contain products or be referenced elsewhere in the system.',
-            'Cannot Delete',
-            { duration: 7000 }
-          );
-        } else if (error.response?.status === 401) {
-          showError(
-            'Your session has expired. Please login again to continue.',
-            'Authentication Required',
-            { duration: 6000 }
-          );
-        } else if (error.response?.status === 403) {
-          showError(
-            'You do not have permission to delete categories.',
-            'Access Denied',
-            { duration: 6000 }
-          );
-        } else if (error.response?.status === 404) {
-          showError(
-            'Category not found. It may have been already deleted.',
-            'Category Not Found',
-            { duration: 5000 }
-          );
-        } else if (error.message === 'Network Error') {
-          showError(
-            'Unable to connect to the server. Please check your internet connection.',
-            'Connection Error',
-            { duration: 6000 }
-          );
-        } else if (error.response?.status >= 500) {
-          showError(
-            'Our servers are currently experiencing issues. Please try again later.',
-            'Server Error',
-            { duration: 6000 }
-          );
-        } else {
-          showError(
-            'Failed to delete category. Please try again.',
-            'Deletion Failed',
-            { duration: 5000 }
-          );
-        }
-      } finally {
-        setDeleteLoading(false);
+      await fetchData();
+      setSubcategoryModalOpen(false);
+      setSelectedSubcategory(null);
+    } catch (error) {
+      console.error('Error saving subcategory:', error);
+      
+      if (error.response?.status === 409) {
+        showError('A subcategory with this name or slug already exists.', 'Duplicate', { duration: 5000 });
+      } else {
+        showError('Failed to save subcategory. Please try again.', 'Error', { duration: 5000 });
       }
     }
+  };
+
+  const handleDeleteCategory = (category) => {
+    setSelectedCategory(category);
+    setDeleteType('category');
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteSubcategory = (subcategory) => {
+    setSelectedSubcategory(subcategory);
+    setDeleteType('subcategory');
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteLoading(true);
+    let loadingAlertId = null;
+    
+    try {
+      loadingAlertId = showLoading(
+        deleteType === 'category' ? 'Deleting category...' : 'Deleting subcategory...',
+        'Processing'
+      );
+      
+      if (deleteType === 'category' && selectedCategory) {
+        await ApiService.deleteCategory(selectedCategory.id);
+        showSuccess('Category deleted successfully!', 'Success', { duration: 4000 });
+      } else if (deleteType === 'subcategory' && selectedSubcategory) {
+        await ApiService.deleteSubcategory(selectedSubcategory.id);
+        showSuccess('Subcategory deleted successfully!', 'Success', { duration: 4000 });
+      }
+      
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      
+      await fetchData();
+      setDeleteModalOpen(false);
+      setSelectedCategory(null);
+      setSelectedSubcategory(null);
+      
+    } catch (error) {
+      console.error('Error deleting:', error);
+      
+      if (loadingAlertId) removeAlert(loadingAlertId);
+      
+      if (error.response?.status === 400) {
+        showWarning(
+          deleteType === 'category' 
+            ? 'Cannot delete category with existing subcategories.'
+            : 'Cannot delete subcategory with existing products.',
+          'Cannot Delete',
+          { duration: 7000 }
+        );
+      } else if (error.response?.status === 404) {
+        showError(`${deleteType} not found.`, 'Not Found', { duration: 5000 });
+      } else {
+        showError(`Failed to delete ${deleteType}.`, 'Deletion Failed', { duration: 5000 });
+      }
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const getSubcategoriesForCategory = (categoryId) => {
+    return subcategories.filter(sub => sub.category?.id === categoryId);
   };
 
   const filteredCategories = categories.filter(category =>
@@ -337,15 +233,8 @@ const CategoryList = () => {
     category.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status) => {
-    return status === 'active' ? 'active' : 'inactive';
-  };
-
   return (
     <div className="__variable_9eb1a5 body">
-      <div className="menu-style"></div>
-      <div className="layout-width"></div>
-      
       <div id="wrapper">
         <div id="page">
           <div className="layout-wrap">
@@ -363,18 +252,24 @@ const CategoryList = () => {
               <div className="category-list-container">
                 <div className="category-list-header">
                   <div className="header-content">
-                    <h1>Categories</h1>
-                    <p>Organize your products with categories</p>
+                    <h1>Categories & Subcategories</h1>
+                    <p>Organize your products with categories and subcategories</p>
                   </div>
-                  <button 
-                    className="add-category-btn"
-                    onClick={handleAdd}
-                  >
-                    <span>+ Add Category</span>
-                  </button>
+                  <div className="header-actions">
+                    <button 
+                      className="add-category-btn"
+                      onClick={handleAddCategory}
+                    >
+                      <span>+ Add Category</span>
+                    </button>
+                    <button 
+                      className="add-subcategory-btn"
+                      onClick={handleAddSubcategory}
+                    >
+                      <span>+ Add Subcategory</span>
+                    </button>
+                  </div>
                 </div>
-
-                {/* Removed local success/error messages since we're using alerts */}
 
                 <div className="category-list-controls">
                   <div className="search-box">
@@ -386,14 +281,6 @@ const CategoryList = () => {
                       className="search-input"
                     />
                     <span className="search-icon">🔍</span>
-                  </div>
-                  
-                  <div className="filter-controls">
-                    <select className="filter-select">
-                      <option value="">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
                   </div>
                 </div>
 
@@ -409,64 +296,102 @@ const CategoryList = () => {
                       <h3>No categories found</h3>
                       <p>
                         {searchTerm 
-                          ? 'No categories match your search. Try different keywords.' 
+                          ? 'No categories match your search.' 
                           : 'Get started by creating your first category.'
                         }
                       </p>
                       {!searchTerm && (
-                        <button 
-                          className="add-category-btn empty-state-btn"
-                          onClick={handleAdd}
-                        >
-                          + Add Your First Category
-                        </button>
+                        <div className="empty-state-actions">
+                          <button 
+                            className="add-category-btn"
+                            onClick={handleAddCategory}
+                          >
+                            Add Category
+                          </button>
+                          <button 
+                            className="add-subcategory-btn"
+                            onClick={handleAddSubcategory}
+                          >
+                            Add Subcategory
+                          </button>
+                        </div>
                       )}
                     </div>
                   ) : (
-                    <div className="categories-grid">
-                      {filteredCategories.map(category => (
-                        <div key={category.id} className="category-card">
-                          <div className="category-card-header">
-                            <h3 className="category-name">{category.name}</h3>
-                            <span className={`status-badge ${getStatusBadge(category.status || 'active')}`}>
-                              {category.status || 'active'}
-                            </span>
-                          </div>
-                          
-                          <div className="category-card-body">
-                            <div className="category-slug">
-                              <span className="slug-label">Slug:</span>
-                              <code className="slug-value">/{category.slug}</code>
+                    <div className="categories-list">
+                      {filteredCategories.map(category => {
+                        const categorySubcategories = getSubcategoriesForCategory(category.id);
+                        const isExpanded = expandedCategories[category.id];
+                        
+                        return (
+                          <div key={category.id} className="category-item">
+                            <div className="category-main">
+                              <div className="category-info">
+                                <button
+                                  className={`expand-toggle ${categorySubcategories.length > 0 ? 'has-sub' : ''}`}
+                                  onClick={() => toggleCategoryExpand(category.id)}
+                                  disabled={categorySubcategories.length === 0}
+                                >
+                                  {categorySubcategories.length > 0 && (
+                                    <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▶</span>
+                                  )}
+                                </button>
+                                <div className="category-details">
+                                  <h3 className="category-name">{category.name}</h3>
+                                  <code className="category-slug">/{category.slug}</code>
+                                </div>
+                              </div>
+                              <div className="category-actions">
+                                <button 
+                                  className="action-btn edit-btn"
+                                  onClick={() => handleEditCategory(category)}
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  className="action-btn delete-btn"
+                                  onClick={() => handleDeleteCategory(category)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </div>
+
+                            {isExpanded && categorySubcategories.length > 0 && (
+                              <div className="subcategories-list">
+                                {categorySubcategories.map(sub => (
+                                  <div key={sub.id} className="subcategory-item">
+                                    <div className="subcategory-info">
+                                      <span className="subcategory-indent">└─</span>
+                                      <div className="subcategory-details">
+                                        <span className="subcategory-name">{sub.name}</span>
+                                        <code className="subcategory-slug">/{sub.slug}</code>
+                                      </div>
+                                    </div>
+                                    <div className="subcategory-actions">
+                                      <button 
+                                        className="action-btn edit-btn small"
+                                        onClick={() => handleEditSubcategory(sub)}
+                                      >
+                                        Edit
+                                      </button>
+                                      <button 
+                                        className="action-btn delete-btn small"
+                                        onClick={() => handleDeleteSubcategory(sub)}
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          
-                          <div className="category-card-actions">
-                            <button 
-                              className="action-btn edit-btn"
-                              onClick={() => handleEdit(category)}
-                            >
-                              <span>Edit</span>
-                            </button>
-                            <button 
-                              className="action-btn delete-btn"
-                              onClick={() => handleDelete(category)}
-                            >
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-
-                {!loading && filteredCategories.length > 0 && (
-                  <div className="category-list-footer">
-                    <div className="pagination-info">
-                      Showing {filteredCategories.length} of {categories.length} categories
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -477,13 +402,24 @@ const CategoryList = () => {
       
       {/* Category Modal */}
       <CategoryModal
-        isOpen={modalOpen}
+        isOpen={categoryModalOpen}
         onClose={() => {
-          setModalOpen(false);
+          setCategoryModalOpen(false);
           setSelectedCategory(null);
         }}
-        onSubmit={handleModalSubmit}
+        onSubmit={handleCategorySubmit}
         category={selectedCategory}
+      />
+
+      {/* Subcategory Modal */}
+      <SubcategoryModal
+        isOpen={subcategoryModalOpen}
+        onClose={() => {
+          setSubcategoryModalOpen(false);
+          setSelectedSubcategory(null);
+        }}
+        onSubmit={handleSubcategorySubmit}
+        subcategory={selectedSubcategory}
       />
       
       {/* Delete Confirmation Modal */}
@@ -491,25 +427,31 @@ const CategoryList = () => {
         <div className="modal-overlay">
           <div className="delete-modal">
             <div className="delete-modal-header">
-              <h3>Delete Category</h3>
+              <h3>Delete {deleteType === 'category' ? 'Category' : 'Subcategory'}</h3>
             </div>
             <div className="delete-modal-content">
               <div className="warning-icon">⚠️</div>
               <p>
-                Are you sure you want to delete <strong>"{selectedCategory?.name}"</strong>? 
-                {selectedCategory?.productCount > 0 && (
+                Are you sure you want to delete{' '}
+                <strong>
+                  "{deleteType === 'category' 
+                    ? selectedCategory?.name 
+                    : selectedSubcategory?.name}"
+                </strong>?
+                {deleteType === 'category' && getSubcategoriesForCategory(selectedCategory?.id).length > 0 && (
                   <span className="warning-text">
-                    {' '}This category contains {selectedCategory.productCount} products that will need to be reassigned.
+                    {' '}This category has {getSubcategoriesForCategory(selectedCategory?.id).length} subcategories that will also be deleted.
                   </span>
                 )}
               </p>
-              {/* Removed local error message since we're using alerts */}
             </div>
             <div className="delete-modal-actions">
               <button 
                 className="btn-secondary"
                 onClick={() => {
                   setDeleteModalOpen(false);
+                  setSelectedCategory(null);
+                  setSelectedSubcategory(null);
                 }}
                 disabled={deleteLoading}
               >
@@ -526,7 +468,7 @@ const CategoryList = () => {
                     Deleting...
                   </>
                 ) : (
-                  'Delete Category'
+                  `Delete ${deleteType === 'category' ? 'Category' : 'Subcategory'}`
                 )}
               </button>
             </div>

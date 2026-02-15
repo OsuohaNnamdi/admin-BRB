@@ -79,7 +79,22 @@ const Sidebar = ({ isOpen, onToggle, onClose }) => {
       type: "submenu",
       items: [
         { text: "Add Category", href: "/add-category" },
+        { text: "Add SubCategory", href: "/add-subcategory" },
         { text: "List Categories", href: "/category" }
+      ]
+    },
+    {
+      title: "Delivery",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 003 13v2a1 1 0 001 1h2.586a1 1 0 01.707.293l2.828 2.828a1 1 0 001.414 0l2.828-2.828A1 1 0 0114.414 16H17a1 1 0 001-1v-2a1 1 0 00-.293-.707L17 11.586V8a6 6 0 00-6-6zm-4 6a4 4 0 118 0v4.586l1.707 1.707A1 1 0 0116 14v1h-2.586l-2.828 2.828L8 15H4v-1a1 1 0 01.293-.707L6 11.586V8z" clipRule="evenodd"/>
+          <path d="M8 8a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+        </svg>
+      ),
+      type: "submenu",
+      items: [
+        { text: "Add Delivery Price", href: "/add-delivery" },
+        { text: "Delivery Price", href: "/delivery-prices" }
       ]
     },
     {

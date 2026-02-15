@@ -23,6 +23,9 @@ import ReviewList from "../pages/main/ReviewList.jsx";
 import BannerList from "../pages/main/banner/BannerList.jsx";
 import AddBanner from "../pages/main/banner/AddBanner.jsx";
 import CouponList from "../pages/main/coupon/CouponList.jsx";
+import DeliveryPriceList from "../pages/main/DeliveryPriceList.jsx";
+import AddDeliveryPrice from "../component/delivery/AddDeliveryPrice.jsx";
+import AddSubcategory from "../pages/main/category/AddSubcategory.jsx";
 
 // Authentication check function
 const checkAuth = async () => {
@@ -211,6 +214,24 @@ const router = createBrowserRouter(
       <Route path="/banner" element={
         <ProtectedLayout>
           <BannerList />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/delivery-prices" element={
+        <ProtectedLayout>
+          <DeliveryPriceList />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/add-delivery" element={
+        <ProtectedLayout>
+          <AddDeliveryPrice />
+        </ProtectedLayout>
+      } />
+
+      <Route path="/add-subcategory" element={
+        <ProtectedLayout>
+          <AddSubcategory/>
         </ProtectedLayout>
       } />
 
