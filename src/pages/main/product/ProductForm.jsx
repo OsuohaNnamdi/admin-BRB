@@ -130,34 +130,64 @@ const ProductForm = () => {
     fetchSubcategories();
   }, [fetchCategories, fetchSubcategories]);
 
-  // Filter subcategories based on selected categories
+  // Effect 1: Filter subcategories when categories change
   useEffect(() => {
     if (formData.category_ids.length > 0) {
       const filtered = subcategories.filter(sub => 
         formData.category_ids.includes(sub.category?.id)
       );
       setFilteredSubcategories(filtered);
-      
-      // Remove any selected subcategories that don't belong to selected categories
+    } else {
+      setFilteredSubcategories([]);
+    }
+  }, [formData.category_ids, subcategories]);
+
+  // Effect 2: Validate and clean up subcategory selections when filtered subcategories change
+  useEffect(() => {
+    // Only run if we have filtered subcategories and selected subcategories
+    if (filteredSubcategories.length > 0 && formData.subcategory_ids.length > 0) {
+      // Check if any selected subcategories are invalid
       const validSubcategoryIds = formData.subcategory_ids.filter(id => 
-        filtered.some(sub => sub.id === id)
+        filteredSubcategories.some(sub => sub.id === id)
       );
       
+      // If there are invalid selections, clean them up
       if (validSubcategoryIds.length !== formData.subcategory_ids.length) {
         setFormData(prev => ({
           ...prev,
           subcategory_ids: validSubcategoryIds
         }));
-        showWarning('Some subcategories were removed as they don\'t belong to selected categories', 'Subcategories Updated', { duration: 3000 });
+        
+        if (validSubcategoryIds.length === 0) {
+          showWarning(
+            'Selected subcategories are no longer valid and have been removed',
+            'Subcategories Updated',
+            { duration: 3000 }
+          );
+        } else {
+          showWarning(
+            'Some subcategories were removed as they don\'t belong to selected categories',
+            'Subcategories Updated',
+            { duration: 3000 }
+          );
+        }
       }
-    } else {
-      setFilteredSubcategories([]);
+    } else if (filteredSubcategories.length === 0 && formData.subcategory_ids.length > 0) {
+      // If no subcategories are available but some are selected, clear them
       setFormData(prev => ({
         ...prev,
         subcategory_ids: []
       }));
+      
+      if (formData.category_ids.length > 0) {
+        showWarning(
+          'No subcategories available for selected categories',
+          'Subcategories Cleared',
+          { duration: 3000 }
+        );
+      }
     }
-  }, [formData.category_ids, subcategories, showWarning]);
+  }, [filteredSubcategories, formData.subcategory_ids, formData.category_ids.length, showWarning]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -416,9 +446,6 @@ const ProductForm = () => {
       console.log('Submitting product data...');
       console.log('Category IDs:', formData.category_ids);
       console.log('Subcategory IDs:', formData.subcategory_ids);
-      console.log('Ingredients:', formData.ingredients);
-      console.log('Main image:', formData.main_image);
-      console.log('Detail images:', formData.detail_images);
       
       const response = await ApiService.createProduct(submitData);
       
