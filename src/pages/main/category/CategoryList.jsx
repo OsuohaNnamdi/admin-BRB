@@ -7,7 +7,6 @@ import CategoryModal from '../../../component/CategoryModal';
 import SubcategoryModal from '../../../component/SubcategoryModal';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
-import { useNavigate } from 'react-router-dom';
 
 const CategoryList = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -25,7 +24,6 @@ const CategoryList = () => {
   const [deleteType, setDeleteType] = useState('category'); // 'category' or 'subcategory'
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  const navigate = useNavigate();
   const { showSuccess, showError, showWarning, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {

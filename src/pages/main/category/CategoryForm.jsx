@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../../styles/CategoryForm.css';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
@@ -16,25 +16,8 @@ const CategoryForm = ({ initialData = null, onSuccess, onCancel, mode = 'categor
   
   const { showSuccess, showError, showInfo, showLoading, removeAlert } = useAlert();
 
-  // Load categories for subcategory form
-  useEffect(() => {
-    if (mode === 'subcategory') {
-      fetchCategories();
-    }
-  }, [mode]);
-
-  // Initialize form with initial data for editing
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        slug: initialData.slug || '',
-        category_id: initialData.category?.id || initialData.category_id || ''
-      });
-    }
-  }, [initialData]);
-
-  const fetchCategories = async () => {
+  // Fetch categories function memoized with useCallback
+  const fetchCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
       const response = await ApiService.getAdminCategories();
@@ -46,7 +29,25 @@ const CategoryForm = ({ initialData = null, onSuccess, onCancel, mode = 'categor
     } finally {
       setLoadingCategories(false);
     }
-  };
+  }, [showError]); // showError is a dependency
+
+  // Load categories for subcategory form
+  useEffect(() => {
+    if (mode === 'subcategory') {
+      fetchCategories();
+    }
+  }, [mode, fetchCategories]); // Added fetchCategories to dependencies
+
+  // Initialize form with initial data for editing
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        slug: initialData.slug || '',
+        category_id: initialData.category?.id || initialData.category_id || ''
+      });
+    }
+  }, [initialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
