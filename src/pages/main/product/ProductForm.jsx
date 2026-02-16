@@ -5,7 +5,8 @@ import { useAlert } from '../../../context/alert/AlertContext';
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
-    category_id: '',
+    category_ids: [], // Changed from category_id to category_ids (array)
+    subcategory_ids: [], // New field for subcategories
     name: '',
     slug: '',
     description: '',
@@ -18,15 +19,20 @@ const ProductForm = () => {
   });
 
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
 
   // Use the alert context instead of local state
   const { 
     showSuccess, 
     showError, 
     showInfo, 
+    showWarning,
     showLoading,
     removeAlert 
   } = useAlert();
@@ -36,6 +42,7 @@ const ProductForm = () => {
 
   // Fetch categories with useCallback
   const fetchCategories = useCallback(async () => {
+    setLoadingCategories(true);
     let loadingAlertId = null;
     
     try {
@@ -94,13 +101,63 @@ const ProductForm = () => {
         ...prev,
         categories: 'Failed to load categories'
       }));
+    } finally {
+      setLoadingCategories(false);
     }
   }, [showLoading, removeAlert, showError]);
 
-  // Fetch categories on component mount
+  // Fetch subcategories
+  const fetchSubcategories = useCallback(async () => {
+    setLoadingSubcategories(true);
+    try {
+      const response = await ApiService.getAdminSubcategories();
+      console.log('Subcategories fetched:', response.data);
+      
+      const subcategoriesData = response.data.subcategories || response.data || [];
+      setSubcategories(subcategoriesData);
+      
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      showError('Failed to load subcategories', 'Error', { duration: 4000 });
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  }, [showError]);
+
+  // Fetch categories and subcategories on component mount
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+    fetchSubcategories();
+  }, [fetchCategories, fetchSubcategories]);
+
+  // Filter subcategories based on selected categories
+  useEffect(() => {
+    if (formData.category_ids.length > 0) {
+      const filtered = subcategories.filter(sub => 
+        formData.category_ids.includes(sub.category?.id)
+      );
+      setFilteredSubcategories(filtered);
+      
+      // Remove any selected subcategories that don't belong to selected categories
+      const validSubcategoryIds = formData.subcategory_ids.filter(id => 
+        filtered.some(sub => sub.id === id)
+      );
+      
+      if (validSubcategoryIds.length !== formData.subcategory_ids.length) {
+        setFormData(prev => ({
+          ...prev,
+          subcategory_ids: validSubcategoryIds
+        }));
+        showWarning('Some subcategories were removed as they don\'t belong to selected categories', 'Subcategories Updated', { duration: 3000 });
+      }
+    } else {
+      setFilteredSubcategories([]);
+      setFormData(prev => ({
+        ...prev,
+        subcategory_ids: []
+      }));
+    }
+  }, [formData.category_ids, subcategories, showWarning]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -113,6 +170,36 @@ const ProductForm = () => {
       setErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+  };
+
+  const handleCategoryChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+    setFormData(prev => ({
+      ...prev,
+      category_ids: selectedOptions
+    }));
+    
+    if (errors.category_ids) {
+      setErrors(prev => ({
+        ...prev,
+        category_ids: ''
+      }));
+    }
+  };
+
+  const handleSubcategoryChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+    setFormData(prev => ({
+      ...prev,
+      subcategory_ids: selectedOptions
+    }));
+    
+    if (errors.subcategory_ids) {
+      setErrors(prev => ({
+        ...prev,
+        subcategory_ids: ''
       }));
     }
   };
@@ -241,8 +328,8 @@ const ProductForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.category_id) {
-      newErrors.category_id = 'Category is required';
+    if (!formData.category_ids || formData.category_ids.length === 0) {
+      newErrors.category_ids = 'At least one category is required';
     }
     if (!formData.name.trim()) {
       newErrors.name = 'Product name is required';
@@ -296,8 +383,16 @@ const ProductForm = () => {
       // Create FormData for file upload
       const submitData = new FormData();
       
+      // Append category and subcategory IDs as arrays
+      formData.category_ids.forEach(id => {
+        submitData.append('category_ids', id);
+      });
+      
+      formData.subcategory_ids.forEach(id => {
+        submitData.append('subcategory_ids', id);
+      });
+      
       // Append text fields
-      submitData.append('category_id', formData.category_id);
       submitData.append('name', formData.name.trim());
       submitData.append('slug', formData.slug.trim());
       submitData.append('description', formData.description.trim());
@@ -319,6 +414,8 @@ const ProductForm = () => {
       });
 
       console.log('Submitting product data...');
+      console.log('Category IDs:', formData.category_ids);
+      console.log('Subcategory IDs:', formData.subcategory_ids);
       console.log('Ingredients:', formData.ingredients);
       console.log('Main image:', formData.main_image);
       console.log('Detail images:', formData.detail_images);
@@ -333,7 +430,8 @@ const ProductForm = () => {
       
       // Reset form after successful submission
       setFormData({
-        category_id: '',
+        category_ids: [],
+        subcategory_ids: [],
         name: '',
         slug: '',
         description: '',
@@ -426,7 +524,8 @@ const ProductForm = () => {
   const handleReset = () => {
     const confirmReset = () => {
       setFormData({
-        category_id: '',
+        category_ids: [],
+        subcategory_ids: [],
         name: '',
         slug: '',
         description: '',
@@ -454,40 +553,88 @@ const ProductForm = () => {
         <p>Create a new product listing for your store. Fill in all required fields marked with *</p>
       </div>
 
-      {/* Removed local success/error messages since we're using alerts */}
-
       <form onSubmit={handleSubmit} className="add-product-form">
         <div className="add-product-grid">
           {/* Left Column - Basic Information */}
           <div className="add-product-column">
             <div className="add-product-card">
-              <h3>Basic Information</h3>
+              <h3>Category Selection</h3>
               
               <div className="add-product-form-group">
-                <label htmlFor="category_id" className="add-product-label required">
-                  Category
+                <label htmlFor="category_ids" className="add-product-label required">
+                  Categories (Select multiple with Ctrl/Cmd)
                 </label>
                 <select
-                  id="category_id"
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleInputChange}
-                  className={`add-product-select ${errors.category_id ? 'error' : ''}`}
+                  id="category_ids"
+                  name="category_ids"
+                  multiple
+                  value={formData.category_ids}
+                  onChange={handleCategoryChange}
+                  className={`add-product-select ${errors.category_ids ? 'error' : ''}`}
+                  size="4"
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loadingCategories}
                 >
-                  <option value="">Select Category</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
+                  {loadingCategories ? (
+                    <option disabled>Loading categories...</option>
+                  ) : (
+                    categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))
+                  )}
                 </select>
-                {errors.category_id && (
-                  <span className="add-product-error-text">{errors.category_id}</span>
+                {errors.category_ids && (
+                  <span className="add-product-error-text">{errors.category_ids}</span>
                 )}
+                <p className="add-product-helper-text">
+                  Hold Ctrl (or Cmd on Mac) to select multiple categories. At least one category is required.
+                </p>
               </div>
 
+              <div className="add-product-form-group">
+                <label htmlFor="subcategory_ids" className="add-product-label">
+                  Subcategories (Optional)
+                </label>
+                <select
+                  id="subcategory_ids"
+                  name="subcategory_ids"
+                  multiple
+                  value={formData.subcategory_ids}
+                  onChange={handleSubcategoryChange}
+                  className={`add-product-select ${errors.subcategory_ids ? 'error' : ''}`}
+                  size="4"
+                  disabled={isSubmitting || loadingSubcategories || formData.category_ids.length === 0}
+                >
+                  {loadingSubcategories ? (
+                    <option disabled>Loading subcategories...</option>
+                  ) : filteredSubcategories.length === 0 ? (
+                    <option disabled>
+                      {formData.category_ids.length === 0 
+                        ? 'Select categories first' 
+                        : 'No subcategories available for selected categories'}
+                    </option>
+                  ) : (
+                    filteredSubcategories.map(sub => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name} ({categories.find(c => c.id === sub.category?.id)?.name || sub.category?.name})
+                      </option>
+                    ))
+                  )}
+                </select>
+                {errors.subcategory_ids && (
+                  <span className="add-product-error-text">{errors.subcategory_ids}</span>
+                )}
+                <p className="add-product-helper-text">
+                  Hold Ctrl (or Cmd on Mac) to select multiple subcategories. Only subcategories from selected categories are shown.
+                </p>
+              </div>
+            </div>
+
+            <div className="add-product-card">
+              <h3>Basic Information</h3>
+              
               <div className="add-product-form-group">
                 <label htmlFor="name" className="add-product-label required">
                   Product Name
