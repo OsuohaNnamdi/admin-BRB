@@ -68,7 +68,7 @@ class ApiService {
       },
     };
     
-    return apiClient.patch(`/admin/products/${id}/`, productData, config, true);
+    return apiClient.put(`/admin/products/${id}/`, productData, config, true);
   }
 
   async deleteProduct(id) {

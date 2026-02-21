@@ -565,3 +565,95 @@
     white-space: nowrap;
   }
 }
+/* Subcategory styles */
+.subcategory-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 200px;
+}
+
+.no-subcategory {
+  color: #9ca3af;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Category filter group */
+.filter-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Active filters for subcategories */
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: #f3f4f6;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #374151;
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.filter-tag button {
+  margin-left: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #6b7280;
+}
+
+.filter-tag button:hover {
+  color: #ef4444;
+}
+
+/* Product table adjustments */
+.products-table th:nth-child(2),
+.products-table td:nth-child(2) {
+  min-width: 120px;
+}
+
+.products-table th:nth-child(3),
+.products-table td:nth-child(3) {
+  min-width: 120px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .filter-controls {
+    flex-wrap: wrap;
+  }
+  
+  .filter-select {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-table th:nth-child(3),
+  .products-table td:nth-child(3) {
+    display: none;
+  }
+  
+  .subcategory-badge {
+    max-width: 150px;
+  }
+}

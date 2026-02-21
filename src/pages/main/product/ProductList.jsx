@@ -16,11 +16,15 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [subcategoriesLoading, setSubcategoriesLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [subcategoryFilter, setSubcategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState({});
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
@@ -84,6 +88,28 @@ const ProductList = () => {
     }
   }, [showError]);
 
+  const fetchSubcategories = useCallback(async () => {
+    setSubcategoriesLoading(true);
+    try {
+      const response = await ApiService.getAdminSubcategories();
+      console.log('Subcategories fetched:', response.data);
+      
+      const subcategoriesData = response.data.subcategories || response.data || [];
+      setSubcategories(subcategoriesData);
+      
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      showError(
+        'Failed to load subcategories.',
+        'Subcategories Load Error',
+        { duration: 4000 }
+      );
+      setSubcategories([]);
+    } finally {
+      setSubcategoriesLoading(false);
+    }
+  }, [showError]);
+
   const createProduct = async (productData) => {
     try {
       const response = await ApiService.createProduct(productData);
@@ -95,7 +121,7 @@ const ProductList = () => {
     }
   };
 
-  // UPDATED: Update product with PATCH method (partial updates only)
+  // Update product with PATCH method (partial updates only)
   const updateProduct = async (id, productData) => {
     try {
       // Prepare only the fields that need updating (partial update)
@@ -108,9 +134,16 @@ const ProductList = () => {
       if (productData.price !== undefined) updateData.price = productData.price;
       if (productData.stock !== undefined) updateData.stock = productData.stock;
       if (productData.is_active !== undefined) updateData.is_active = productData.is_active;
-      if (productData.category_id !== undefined) updateData.category_id = productData.category_id;
       
-      // Note: Images are NOT included in PATCH request as per requirements
+      // Handle category_ids as array
+      if (productData.category_ids !== undefined) {
+        updateData.category_ids = productData.category_ids;
+      }
+      
+      // Handle subcategory_ids as array
+      if (productData.subcategory_ids !== undefined) {
+        updateData.subcategory_ids = productData.subcategory_ids;
+      }
       
       console.log('PATCH updating product with data:', updateData);
       
@@ -136,14 +169,17 @@ const ProductList = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, [fetchProducts, fetchCategories]);
+    fetchSubcategories();
+  }, [fetchProducts, fetchCategories, fetchSubcategories]);
 
   const handleEdit = (product) => {
     // Transform product data for the modal
     const productForEdit = {
       ...product,
-      // Ensure category_id is set for the modal
-      category_id: product.category?.id || product.category_id || ''
+      // Extract category_ids from product
+      category_ids: product.category_ids || (product.category ? [product.category.id] : []),
+      // Extract subcategory_ids from product
+      subcategory_ids: product.subcategory_ids || product.subcategories?.map(s => s.id) || []
     };
     setSelectedProduct(productForEdit);
     setModalOpen(true);
@@ -159,54 +195,26 @@ const ProductList = () => {
     setModalOpen(true);
   };
 
-  // UPDATED: Handle modal submit with partial updates
+  const toggleCategoryExpand = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+  // Handle modal submit with partial updates
   const handleModalSubmit = async (productData) => {
     try {
       let loadingAlertId = showLoading('Saving product...', 'Processing');
       
-      // Prepare data for API - only include provided fields
-      const submitData = {};
-      
-      // Always include required fields or fields that are provided
-      if (productData.name !== undefined) submitData.name = productData.name;
-      if (productData.slug !== undefined) submitData.slug = productData.slug;
-      if (productData.description !== undefined) submitData.description = productData.description;
-      if (productData.price !== undefined) submitData.price = productData.price;
-      if (productData.stock !== undefined) submitData.stock = productData.stock;
-      if (productData.is_active !== undefined) submitData.is_active = productData.is_active;
-      if (productData.category_id !== undefined) submitData.category_id = productData.category_id;
-      
-      // IMPORTANT: Images are NOT sent in PATCH request
-      // Image updates should be handled separately if needed
-      
       if (selectedProduct) {
         // Update existing product using PATCH (partial update)
-        await updateProduct(selectedProduct.id, submitData);
+        await updateProduct(selectedProduct.id, productData);
         removeAlert(loadingAlertId);
         showSuccess('Product updated successfully!', 'Update Successful');
       } else {
-        // Create new product - still use POST with full data
-        // For creation, include all necessary fields
-        const createData = {
-          name: productData.name,
-          slug: productData.slug,
-          description: productData.description || '',
-          price: productData.price,
-          stock: productData.stock,
-          is_active: productData.is_active,
-          category_id: productData.category_id
-        };
-        
-        // For creation, include images if provided
-        if (productData.main_image) {
-          createData.main_image = productData.main_image;
-        }
-        
-        if (productData.detail_images && productData.detail_images.length > 0) {
-          createData.detail_images = productData.detail_images;
-        }
-        
-        await createProduct(createData);
+        // Create new product - use POST with full data
+        await createProduct(productData);
         removeAlert(loadingAlertId);
         showSuccess('Product created successfully!', 'Create Successful');
       }
@@ -289,26 +297,32 @@ const ProductList = () => {
     }
   };
 
+  // Get subcategories for a specific category
+  const getSubcategoriesForCategory = (categoryId) => {
+    return subcategories.filter(sub => sub.category?.id === categoryId);
+  };
+
   // Filter products based on search term and filters
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.slug?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = 
-      !categoryFilter || 
-      product.category?.id?.toString() === categoryFilter ||
-      product.category?.name?.toLowerCase() === categoryFilter.toLowerCase() ||
-      product.category?.toLowerCase() === categoryFilter.toLowerCase();
+    const matchesCategory = !categoryFilter || 
+      product.category_ids?.includes(parseInt(categoryFilter)) ||
+      product.category?.id?.toString() === categoryFilter;
+
+    const matchesSubcategory = !subcategoryFilter || 
+      product.subcategory_ids?.includes(parseInt(subcategoryFilter)) ||
+      product.subcategories?.some(sub => sub.id?.toString() === subcategoryFilter);
 
     const matchesStatus = 
       !statusFilter || 
       (statusFilter === 'active' && (product.status === 'active' || product.is_active === true)) ||
       (statusFilter === 'inactive' && (product.status === 'inactive' || product.is_active === false));
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
   });
 
   const getStatusBadge = (status) => {
@@ -339,14 +353,39 @@ const ProductList = () => {
     return status === 'active' || status === true ? 'Active' : 'Inactive';
   };
 
-  const getCategoryName = (product) => {
+  const getCategoryNames = (product) => {
+    if (product.category_ids && product.category_ids.length > 0) {
+      return product.category_ids.map(id => {
+        const cat = categories.find(c => c.id === id);
+        return cat?.name;
+      }).filter(Boolean).join(', ');
+    }
     if (product.category?.name) return product.category.name;
     if (product.category) return product.category;
     return 'Uncategorized';
   };
 
+  const getSubcategoryNames = (product) => {
+    if (product.subcategory_ids && product.subcategory_ids.length > 0) {
+      return product.subcategory_ids.map(id => {
+        const sub = subcategories.find(s => s.id === id);
+        return sub?.name;
+      }).filter(Boolean).join(', ');
+    }
+    if (product.subcategories) {
+      return product.subcategories.map(s => s.name).join(', ');
+    }
+    return '';
+  };
+
   const handleCategoryFilterChange = (e) => {
-    setCategoryFilter(e.target.value);
+    const value = e.target.value;
+    setCategoryFilter(value);
+    setSubcategoryFilter(''); // Clear subcategory filter when category changes
+  };
+
+  const handleSubcategoryFilterChange = (e) => {
+    setSubcategoryFilter(e.target.value);
   };
 
   const handleStatusFilterChange = (e) => {
@@ -356,10 +395,16 @@ const ProductList = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setCategoryFilter('');
+    setSubcategoryFilter('');
     setStatusFilter('');
   };
 
-  const hasActiveFilters = searchTerm || categoryFilter || statusFilter;
+  const hasActiveFilters = searchTerm || categoryFilter || subcategoryFilter || statusFilter;
+
+  // Get subcategories for current category filter
+  const subcategoriesForFilter = categoryFilter 
+    ? getSubcategoriesForCategory(parseInt(categoryFilter))
+    : [];
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -429,6 +474,26 @@ const ProductList = () => {
                     
                     <select 
                       className="filter-select"
+                      value={subcategoryFilter}
+                      onChange={handleSubcategoryFilterChange}
+                      disabled={!categoryFilter || subcategoriesLoading || subcategoriesForFilter.length === 0}
+                    >
+                      <option value="">All Subcategories</option>
+                      {subcategoriesForFilter.map(subcategory => (
+                        <option key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </option>
+                      ))}
+                      {categoryFilter && subcategoriesForFilter.length === 0 && !subcategoriesLoading && (
+                        <option value="" disabled>No subcategories available</option>
+                      )}
+                      {subcategoriesLoading && (
+                        <option value="" disabled>Loading subcategories...</option>
+                      )}
+                    </select>
+                    
+                    <select 
+                      className="filter-select"
                       value={statusFilter}
                       onChange={handleStatusFilterChange}
                     >
@@ -462,6 +527,12 @@ const ProductList = () => {
                       <span className="filter-tag">
                         Category: {categories.find(cat => cat.id.toString() === categoryFilter)?.name || categoryFilter}
                         <button onClick={() => setCategoryFilter('')}>×</button>
+                      </span>
+                    )}
+                    {subcategoryFilter && (
+                      <span className="filter-tag">
+                        Subcategory: {subcategories.find(sub => sub.id.toString() === subcategoryFilter)?.name || subcategoryFilter}
+                        <button onClick={() => setSubcategoryFilter('')}>×</button>
                       </span>
                     )}
                     {statusFilter && (
@@ -511,7 +582,8 @@ const ProductList = () => {
                         <thead>
                           <tr>
                             <th>Product</th>
-                            <th>Category</th>
+                            <th>Categories</th>
+                            <th>Subcategories</th>
                             <th>Price</th>
                             <th>Stock</th>
                             <th>Status</th>
@@ -519,62 +591,76 @@ const ProductList = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredProducts.map(product => (
-                            <tr key={product.id}>
-                              <td>
-                                <div className="product-info">
-                                  <img 
-                                    src={product.main_image_url} 
-                                    alt={product.name}
-                                    className="product-image"
-                                    onError={(e) => {
-                                      e.target.src = 'https://via.placeholder.com/60x60';
-                                    }}
-                                  />
-                                  <div className="product-details">
-                                    <div className="product-name">{product.name || 'Unnamed Product'}</div>
-                                    <div className="product-slug">/{product.slug || 'no-slug'}</div>
+                          {filteredProducts.map(product => {
+                            const categoryNames = getCategoryNames(product);
+                            const subcategoryNames = getSubcategoryNames(product);
+                            
+                            return (
+                              <tr key={product.id}>
+                                <td>
+                                  <div className="product-info">
+                                    <img 
+                                      src={product.main_image_url} 
+                                      alt={product.name}
+                                      className="product-image"
+                                      onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/60x60';
+                                      }}
+                                    />
+                                    <div className="product-details">
+                                      <div className="product-name">{product.name || 'Unnamed Product'}</div>
+                                      <div className="product-slug">/{product.slug || 'no-slug'}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </td>
-                              <td>
-                                <span className="category-badge">
-                                  {getCategoryName(product)}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="price">{formatPrice(product.price)}</div>
-                              </td>
-                              <td>
-                                <span className={`stock-badge ${getStockBadge(product.stock)}`}>
-                                  {getStockText(product.stock)}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={`status-badge ${getStatusBadge(product.status || product.is_active)}`}>
-                                  {getStatusText(product.status || product.is_active)}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="action-buttons">
-                                  <button 
-                                    className="action-btn edit-btn"
-                                    onClick={() => handleEdit(product)}
-                                    title="Edit product"
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button 
-                                    className="action-btn delete-btn"
-                                    onClick={() => handleDelete(product)}
-                                    title="Delete product"
-                                  >
-                                    🗑️
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+                                <td>
+                                  <span className="category-badge">
+                                    {categoryNames}
+                                  </span>
+                                </td>
+                                <td>
+                                  {subcategoryNames ? (
+                                    <span className="subcategory-badge">
+                                      {subcategoryNames}
+                                    </span>
+                                  ) : (
+                                    <span className="no-subcategory">—</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="price">{formatPrice(product.price)}</div>
+                                </td>
+                                <td>
+                                  <span className={`stock-badge ${getStockBadge(product.stock)}`}>
+                                    {getStockText(product.stock)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={`status-badge ${getStatusBadge(product.status || product.is_active)}`}>
+                                    {getStatusText(product.status || product.is_active)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="action-buttons">
+                                    <button 
+                                      className="action-btn edit-btn"
+                                      onClick={() => handleEdit(product)}
+                                      title="Edit product"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button 
+                                      className="action-btn delete-btn"
+                                      onClick={() => handleDelete(product)}
+                                      title="Delete product"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -612,7 +698,8 @@ const ProductList = () => {
         }}
         onSubmit={handleModalSubmit}
         product={selectedProduct}
-        categories={categories} // Make sure this is passed
+        categories={categories}
+        subcategories={subcategories}
       />
       
       {/* Delete Confirmation Modal */}
