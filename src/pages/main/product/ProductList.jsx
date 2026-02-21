@@ -6,7 +6,6 @@ import SettingsPanel from '../../../component/SettingsPanel';
 import ProductModal from '../../../component/ProductModal';
 import ApiService from '../../../config/ApiService';
 import { useAlert } from '../../../context/alert/AlertContext';
-import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -59,8 +58,6 @@ const ProductList = () => {
       setLoading(false);
     }
   }, [showError]);
-
-  const navigate = useNavigate();
 
   const fetchCategories = useCallback(async () => {
     setCategoriesLoading(true);
@@ -417,7 +414,7 @@ const ProductList = () => {
                   </div>
                   <button 
                     className="add-product-btn"
-                    onClick={handleAdd} // Changed to open modal instead of navigate
+                    onClick={handleAdd}
                   >
                     <span>+ Add Product</span>
                   </button>
