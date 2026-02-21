@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ProductModal.css';
 
-const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
+const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], subcategories = [] }) => {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -9,15 +9,72 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
     price: '',
     stock: '',
     is_active: true,
-    category_id: '',
+    category_ids: [], // Changed from category_id to category_ids (array)
+    subcategory_ids: [], // New field for subcategories
     main_image: null,
     detail_images: []
   });
 
+  const [availableSubcategories, setAvailableSubcategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update available subcategories when selected categories change
+  useEffect(() => {
+    if (formData.category_ids.length > 0) {
+      // Filter subcategories that belong to selected categories
+      const filtered = subcategories.filter(sub => 
+        formData.category_ids.includes(sub.category?.id)
+      );
+      setAvailableSubcategories(filtered);
+      
+      // Remove any selected subcategories that are no longer valid
+      const validSubcategoryIds = formData.subcategory_ids.filter(id => 
+        filtered.some(sub => sub.id === id)
+      );
+      
+      if (validSubcategoryIds.length !== formData.subcategory_ids.length) {
+        setFormData(prev => ({
+          ...prev,
+          subcategory_ids: validSubcategoryIds
+        }));
+      }
+    } else {
+      setAvailableSubcategories([]);
+      setFormData(prev => ({
+        ...prev,
+        subcategory_ids: []
+      }));
+    }
+  }, [formData.category_ids, subcategories]);
 
   useEffect(() => {
     if (product) {
+      // Handle both old and new data structures
+      let categoryIds = [];
+      let subcategoryIds = [];
+
+      // Handle category_ids array
+      if (product.category_ids && Array.isArray(product.category_ids)) {
+        categoryIds = product.category_ids;
+      } 
+      // Handle single category_id
+      else if (product.category_id) {
+        categoryIds = [product.category_id];
+      }
+      // Handle category object
+      else if (product.category?.id) {
+        categoryIds = [product.category.id];
+      }
+
+      // Handle subcategory_ids array
+      if (product.subcategory_ids && Array.isArray(product.subcategory_ids)) {
+        subcategoryIds = product.subcategory_ids;
+      }
+      // Handle subcategories array of objects
+      else if (product.subcategories && Array.isArray(product.subcategories)) {
+        subcategoryIds = product.subcategories.map(s => s.id);
+      }
+
       setFormData({
         name: product.name || '',
         slug: product.slug || '',
@@ -25,7 +82,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
         price: product.price || '',
         stock: product.stock || '',
         is_active: product.is_active !== undefined ? product.is_active : true,
-        category_id: product.category_id || product.category?.id || '',
+        category_ids: categoryIds,
+        subcategory_ids: subcategoryIds,
         main_image: null,
         detail_images: []
       });
@@ -37,7 +95,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
         price: '',
         stock: '',
         is_active: true,
-        category_id: '',
+        category_ids: [],
+        subcategory_ids: [],
         main_image: null,
         detail_images: []
       });
@@ -49,6 +108,22 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleCategoryChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+    setFormData(prev => ({
+      ...prev,
+      category_ids: selectedOptions
+    }));
+  };
+
+  const handleSubcategoryChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+    setFormData(prev => ({
+      ...prev,
+      subcategory_ids: selectedOptions
     }));
   };
 
@@ -75,26 +150,29 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
     setIsSubmitting(true);
 
     try {
-      const submitData = new FormData();
+      // For PATCH updates, we only send what's needed
+      const submitData = {};
 
-      submitData.append('name', formData.name);
-      submitData.append('slug', formData.slug);
-      submitData.append('description', formData.description);
-      submitData.append('price', formData.price);
-      submitData.append('stock', formData.stock.toString());
-      submitData.append('is_active', formData.is_active.toString());
+      // Always include text fields if they have values
+      if (formData.name) submitData.name = formData.name;
+      if (formData.slug) submitData.slug = formData.slug;
+      if (formData.description) submitData.description = formData.description;
+      if (formData.price) submitData.price = parseFloat(formData.price);
+      if (formData.stock !== '') submitData.stock = parseInt(formData.stock);
+      submitData.is_active = formData.is_active;
 
-      if (formData.category_id) {
-        submitData.append('category_id', formData.category_id.toString());
+      // Include category_ids array
+      if (formData.category_ids.length > 0) {
+        submitData.category_ids = formData.category_ids;
       }
 
-      if (formData.main_image) {
-        submitData.append('main_image', formData.main_image);
+      // Include subcategory_ids array
+      if (formData.subcategory_ids.length > 0) {
+        submitData.subcategory_ids = formData.subcategory_ids;
       }
 
-      formData.detail_images.forEach((image) => {
-        submitData.append('detail_images', image);
-      });
+      // For image updates, we would need a separate API call
+      // This modal focuses on basic info updates as per PATCH requirements
 
       await onSubmit(submitData);
     } catch (error) {
@@ -141,21 +219,56 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
             </div>
 
             <div className="form-group">
-              <label className="form-label required">Category</label>
+              <label className="form-label required">Categories (Select multiple with Ctrl/Cmd)</label>
               <select
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleInputChange}
+                name="category_ids"
+                multiple
+                value={formData.category_ids}
+                onChange={handleCategoryChange}
                 className="form-select"
+                size="4"
                 required
               >
-                <option value="">Select a category</option>
-                {categories?.map(category => (
+                <option value="" disabled>Select categories</option>
+                {categories.map(category => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
+              <small className="helper-text">Hold Ctrl (Cmd on Mac) to select multiple categories</small>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Subcategories (Optional)</label>
+              <select
+                name="subcategory_ids"
+                multiple
+                value={formData.subcategory_ids}
+                onChange={handleSubcategoryChange}
+                className="form-select"
+                size="4"
+                disabled={formData.category_ids.length === 0 || availableSubcategories.length === 0}
+              >
+                {availableSubcategories.length === 0 ? (
+                  <option value="" disabled>
+                    {formData.category_ids.length === 0 
+                      ? 'Select categories first' 
+                      : 'No subcategories available'}
+                  </option>
+                ) : (
+                  availableSubcategories.map(sub => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              <small className="helper-text">
+                {formData.category_ids.length === 0 
+                  ? 'Select categories first to see subcategories' 
+                  : 'Hold Ctrl (Cmd on Mac) to select multiple subcategories'}
+              </small>
             </div>
 
             <div className="form-group">
@@ -166,6 +279,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
                 value={formData.price}
                 onChange={handleInputChange}
                 min="0"
+                step="0.01"
                 className="form-input"
                 required
               />
@@ -204,7 +318,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
                 checked={formData.is_active}
                 onChange={handleInputChange}
               />
-              Active Product
+              <span>Active Product</span>
             </label>
           </div>
 
@@ -215,7 +329,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories }) => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={isSubmitting || !formData.category_id}
+              disabled={isSubmitting || formData.category_ids.length === 0}
             >
               {isSubmitting ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
             </button>

@@ -226,3 +226,64 @@
     padding: 1.25rem;
   }
 }
+/* ProductModal.css additions */
+
+.form-select[size] {
+  height: auto;
+  min-height: 100px;
+  padding: 4px;
+}
+
+.form-select option {
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.form-select option:checked {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.form-select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.helper-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Grid layout for form */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Make full-width elements span both columns */
+.form-grid .form-group:nth-child(3),
+.form-grid .form-group:nth-child(4) {
+  grid-column: span 2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-grid .form-group:nth-child(3),
+  .form-grid .form-group:nth-child(4) {
+    grid-column: span 1;
+  }
+  
+  .form-select[size] {
+    min-height: 80px;
+  }
+}
