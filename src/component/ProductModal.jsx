@@ -45,6 +45,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
         subcategory_ids: []
       }));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.category_ids, subcategories]);
 
   useEffect(() => {
@@ -203,6 +204,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 onChange={handleNameChange}
                 className="form-input"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -215,6 +217,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 onChange={handleInputChange}
                 className="form-input"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -228,8 +231,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 className="form-select"
                 size="4"
                 required
+                disabled={isSubmitting}
               >
-                <option value="" disabled>Select categories</option>
                 {categories.map(category => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -248,7 +251,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 onChange={handleSubcategoryChange}
                 className="form-select"
                 size="4"
-                disabled={formData.category_ids.length === 0 || availableSubcategories.length === 0}
+                disabled={isSubmitting || formData.category_ids.length === 0 || availableSubcategories.length === 0}
               >
                 {availableSubcategories.length === 0 ? (
                   <option value="" disabled>
@@ -282,6 +285,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 step="0.01"
                 className="form-input"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -295,6 +299,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 min="0"
                 className="form-input"
                 required
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -307,6 +312,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
               onChange={handleInputChange}
               rows="4"
               className="form-textarea"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -317,6 +323,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 name="is_active"
                 checked={formData.is_active}
                 onChange={handleInputChange}
+                disabled={isSubmitting}
               />
               <span>Active Product</span>
             </label>

@@ -133,6 +133,8 @@ const ProductList = () => {
       if (productData.price !== undefined) updateData.price = productData.price;
       if (productData.stock !== undefined) updateData.stock = productData.stock;
       if (productData.is_active !== undefined) updateData.is_active = productData.is_active;
+      if (productData.ingredients !== undefined) updateData.ingredients = productData.ingredients;
+      if (productData.how_to_use !== undefined) updateData.how_to_use = productData.how_to_use;
       
       // Handle category_ids as array
       if (productData.category_ids !== undefined) {
@@ -172,14 +174,15 @@ const ProductList = () => {
   }, [fetchProducts, fetchCategories, fetchSubcategories]);
 
   const handleEdit = (product) => {
-    // Transform product data for the modal
+    // Transform product data for the modal - FIXED: Extract IDs from the categories and subcategories arrays
     const productForEdit = {
       ...product,
-      // Extract category_ids from product
-      category_ids: product.category_ids || (product.category ? [product.category.id] : []),
-      // Extract subcategory_ids from product
-      subcategory_ids: product.subcategory_ids || product.subcategories?.map(s => s.id) || []
+      // Extract category_ids from the categories array
+      category_ids: product.categories ? product.categories.map(cat => cat.id) : [],
+      // Extract subcategory_ids from the subcategories array
+      subcategory_ids: product.subcategories ? product.subcategories.map(sub => sub.id) : []
     };
+    console.log('Product for edit:', productForEdit);
     setSelectedProduct(productForEdit);
     setModalOpen(true);
   };
@@ -294,31 +297,29 @@ const ProductList = () => {
     return subcategories.filter(sub => sub.category?.id === categoryId);
   };
 
-  // Filter products based on search term and filters
+  // Filter products based on search term and filters - FIXED: Check against categories and subcategories arrays
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.categories?.some(cat => cat.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       product.slug?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = !categoryFilter || 
-      product.category_ids?.includes(parseInt(categoryFilter)) ||
-      product.category?.id?.toString() === categoryFilter;
+      product.categories?.some(cat => cat.id?.toString() === categoryFilter);
 
     const matchesSubcategory = !subcategoryFilter || 
-      product.subcategory_ids?.includes(parseInt(subcategoryFilter)) ||
       product.subcategories?.some(sub => sub.id?.toString() === subcategoryFilter);
 
     const matchesStatus = 
       !statusFilter || 
-      (statusFilter === 'active' && (product.status === 'active' || product.is_active === true)) ||
-      (statusFilter === 'inactive' && (product.status === 'inactive' || product.is_active === false));
+      (statusFilter === 'active' && (product.is_active === true)) ||
+      (statusFilter === 'inactive' && (product.is_active === false));
 
     return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
   });
 
   const getStatusBadge = (status) => {
-    return status === 'active' || status === true ? 'active' : 'inactive';
+    return status === true ? 'active' : 'inactive';
   };
 
   const getStockBadge = (stock) => {
@@ -342,30 +343,21 @@ const ProductList = () => {
   };
 
   const getStatusText = (status) => {
-    return status === 'active' || status === true ? 'Active' : 'Inactive';
+    return status === true ? 'Active' : 'Inactive';
   };
 
+  // FIXED: Get category names from the categories array
   const getCategoryNames = (product) => {
-    if (product.category_ids && product.category_ids.length > 0) {
-      return product.category_ids.map(id => {
-        const cat = categories.find(c => c.id === id);
-        return cat?.name;
-      }).filter(Boolean).join(', ');
+    if (product.categories && product.categories.length > 0) {
+      return product.categories.map(cat => cat.name).join(', ');
     }
-    if (product.category?.name) return product.category.name;
-    if (product.category) return product.category;
     return 'Uncategorized';
   };
 
+  // FIXED: Get subcategory names from the subcategories array
   const getSubcategoryNames = (product) => {
-    if (product.subcategory_ids && product.subcategory_ids.length > 0) {
-      return product.subcategory_ids.map(id => {
-        const sub = subcategories.find(s => s.id === id);
-        return sub?.name;
-      }).filter(Boolean).join(', ');
-    }
-    if (product.subcategories) {
-      return product.subcategories.map(s => s.name).join(', ');
+    if (product.subcategories && product.subcategories.length > 0) {
+      return product.subcategories.map(sub => sub.name).join(', ');
     }
     return '';
   };
@@ -425,7 +417,7 @@ const ProductList = () => {
                   </div>
                   <button 
                     className="add-product-btn"
-                    onClick={() => navigate("/add-product")}
+                    onClick={handleAdd} // Changed to open modal instead of navigate
                   >
                     <span>+ Add Product</span>
                   </button>
@@ -529,7 +521,7 @@ const ProductList = () => {
                     )}
                     {statusFilter && (
                       <span className="filter-tag">
-                        Status: {statusFilter}
+                        Status: {statusFilter === 'active' ? 'Active' : 'Inactive'}
                         <button onClick={() => setStatusFilter('')}>×</button>
                       </span>
                     )}
@@ -628,8 +620,8 @@ const ProductList = () => {
                                   </span>
                                 </td>
                                 <td>
-                                  <span className={`status-badge ${getStatusBadge(product.status || product.is_active)}`}>
-                                    {getStatusText(product.status || product.is_active)}
+                                  <span className={`status-badge ${getStatusBadge(product.is_active)}`}>
+                                    {getStatusText(product.is_active)}
                                   </span>
                                 </td>
                                 <td>
