@@ -5,12 +5,13 @@ import { useAlert } from '../../../context/alert/AlertContext';
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
-    category_ids: [], // Changed from category_id to category_ids (array)
-    subcategory_ids: [], // New field for subcategories
+    category_ids: [], 
+    subcategory_ids: [], 
     name: '',
     slug: '',
     description: '',
     ingredients: '',
+    how_to_use: '',
     price: '',
     stock: '',
     is_active: true,
@@ -373,6 +374,9 @@ const ProductForm = () => {
     if (!formData.ingredients.trim()) {
       newErrors.ingredients = 'Ingredients list is required';
     }
+    if (!formData.how_to_use.trim()) {
+      newErrors.how_to_use = 'How to use is required';
+    }
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Valid price is required';
     }
@@ -427,6 +431,7 @@ const ProductForm = () => {
       submitData.append('slug', formData.slug.trim());
       submitData.append('description', formData.description.trim());
       submitData.append('ingredients', formData.ingredients.trim());
+      submitData.append('how_to_use', formData.how_to_use.trim());
       submitData.append('price', parseFloat(formData.price));
       submitData.append('stock', parseInt(formData.stock));
       submitData.append('is_active', formData.is_active.toString());
@@ -463,6 +468,7 @@ const ProductForm = () => {
         slug: '',
         description: '',
         ingredients: '',
+        how_to_use: '',
         price: '',
         stock: '',
         is_active: true,
@@ -557,6 +563,7 @@ const ProductForm = () => {
         slug: '',
         description: '',
         ingredients: '',
+        how_to_use: '',
         price: '',
         stock: '',
         is_active: true,
@@ -972,6 +979,34 @@ const ProductForm = () => {
                 )}
               </div>
             </div>
+
+            <div className="add-product-card">
+              <h3>How to use</h3>
+              
+              <div className="add-product-form-group">
+                <label htmlFor="How to use" className="add-product-label required">
+                  Product How to use
+                </label>
+                <textarea
+                  id="How to use"
+                  name="How to use"
+                  value={formData.how_to_use}
+                  onChange={handleInputChange}
+                  placeholder="How to use"
+                  rows="4"
+                  className={`add-product-textarea ${errors.how_to_use ? 'error' : ''}`}
+                  required
+                  disabled={isSubmitting}
+                />
+                {errors.how_to_use && (
+                  <span className="add-product-error-text">{errors.how_to_use}</span>
+                )}
+                <p className="add-product-helper-text">
+                  List all How to use used in the product. Be comprehensive for customers with allergies or dietary restrictions.
+                </p>
+              </div>
+              </div>
+            
           </div>
         </div>
 
