@@ -980,19 +980,19 @@ const ProductForm = () => {
               </div>
             </div>
 
-            <div className="add-product-card">
-              <h3>How to use</h3>
+           <div className="add-product-card">
+              <h3>How to Use</h3>
               
               <div className="add-product-form-group">
-                <label htmlFor="How to use" className="add-product-label required">
-                  Product How to use
+                <label htmlFor="how_to_use" className="add-product-label required">
+                  How to Use Instructions
                 </label>
                 <textarea
-                  id="How to use"
-                  name="How to use"
+                  id="how_to_use"
+                  name="how_to_use" 
                   value={formData.how_to_use}
                   onChange={handleInputChange}
-                  placeholder="How to use"
+                  placeholder="Provide step-by-step instructions on how to use this product..."
                   rows="4"
                   className={`add-product-textarea ${errors.how_to_use ? 'error' : ''}`}
                   required
@@ -1002,10 +1002,10 @@ const ProductForm = () => {
                   <span className="add-product-error-text">{errors.how_to_use}</span>
                 )}
                 <p className="add-product-helper-text">
-                  List all How to use used in the product. Be comprehensive for customers with allergies or dietary restrictions.
+                  Explain how customers should apply or use this product for best results.
                 </p>
               </div>
-              </div>
+            </div>
             
           </div>
         </div>

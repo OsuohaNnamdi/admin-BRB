@@ -24,7 +24,6 @@ const ProductList = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [subcategoryFilter, setSubcategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState({});
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
@@ -193,13 +192,6 @@ const ProductList = () => {
   const handleAdd = () => {
     setSelectedProduct(null);
     setModalOpen(true);
-  };
-
-  const toggleCategoryExpand = (categoryId) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
   };
 
   // Handle modal submit with partial updates
