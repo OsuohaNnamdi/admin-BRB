@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../../../styles/OrderList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -14,6 +14,11 @@ const OrderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
+  
+  // Refs to prevent unnecessary re-renders
+  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef(null);
   
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
   const {
@@ -27,66 +32,110 @@ const OrderList = () => {
   
   const navigate = useNavigate();
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // Stabilize alert functions to prevent re-renders
+  const showErrorStable = useCallback((message, title, options) => {
+    showError(message, title, options);
+  }, [showError]);
 
-  const closeSidebar = () => {
+  const showSuccessStable = useCallback((message, title) => {
+    showSuccess(message, title);
+  }, [showSuccess]);
+
+  const showLoadingStable = useCallback((message, title) => {
+    return showLoading(message, title);
+  }, [showLoading]);
+
+  const removeAlertStable = useCallback((id) => {
+    if (id) removeAlert(id);
+  }, [removeAlert]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
     setSidebarOpen(false);
-  };
+  }, []);
 
+  // Stabilized fetchOrders function
   const fetchOrders = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetching) return;
+    
+    setIsFetching(true);
     setLoading(true);
+    
+    // Cancel previous request if exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    
     try {
-      const response = await ApiService.getAdminOrders();
+      const response = await ApiService.getAdminOrders({
+        signal: abortControllerRef.current.signal
+      });
+      
+      if (!isMountedRef.current) return;
+      
       console.log('Orders fetched:', response.data);
-
       const ordersData = response.data.orders || response.data || [];
       updateOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      showError(
-        'Failed to load orders. Please try again.',
-        'Load Error',
-        { duration: 5000 }
-      );
-      updateOrders([]);
+      if (!isMountedRef.current) return;
+      
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching orders:', error);
+        showErrorStable(
+          'Failed to load orders. Please try again.',
+          'Load Error',
+          { duration: 5000 }
+        );
+        updateOrders([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setIsFetching(false);
+      }
     }
-  }, [setLoading, updateOrders, showError]);
+  }, [setLoading, updateOrders, showErrorStable, isFetching]);
 
-
-  // Updated to match the API endpoint structure and update context
-  const updateOrderStatusAPI = async (orderId, newStatus) => {
+  // Updated updateOrderStatusAPI with proper error handling
+  const updateOrderStatusAPI = useCallback(async (orderId, newStatus) => {
     let loadingAlertId;
     try {
-      loadingAlertId = showLoading('Updating order status...', 'Processing');
+      loadingAlertId = showLoadingStable('Updating order status...', 'Processing');
       
-      // Create the status data object as expected by the API
       const statusData = {
         status: newStatus
       };
       
       await ApiService.updateOrderStatus(orderId, statusData);
       
+      if (!isMountedRef.current) return;
+      
       // Update the order status in context
       updateOrderStatus(orderId, newStatus);
       
       if (loadingAlertId) {
-        removeAlert(loadingAlertId);
+        removeAlertStable(loadingAlertId);
       }
-      showSuccess('Order status updated successfully!', 'Update Successful');
+      showSuccessStable('Order status updated successfully!', 'Update Successful');
     } catch (error) {
+      if (!isMountedRef.current) return;
+      
       console.error('Error updating order status:', error);
       if (loadingAlertId) {
-        removeAlert(loadingAlertId);
+        removeAlertStable(loadingAlertId);
       }
       handleUpdateError(error);
-    } 
-  };
+    }
+  }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable]);
 
-  const handleUpdateError = (error) => {
+  const handleUpdateError = useCallback((error) => {
     if (error.response?.data) {
       const backendErrors = error.response.data;
       let errorMessage = 'Failed to update order. ';
@@ -99,104 +148,114 @@ const OrderList = () => {
         }
       });
       
-      showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
+      showErrorStable(errorMessage.trim(), 'Update Failed', { duration: 6000 });
     } else if (error.response?.status === 400) {
-      showError('Invalid status data.', 'Validation Error', { duration: 5000 });
+      showErrorStable('Invalid status data.', 'Validation Error', { duration: 5000 });
     } else if (error.response?.status === 401) {
-      showError('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
+      showErrorStable('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
     } else if (error.response?.status === 403) {
-      showError('You do not have permission to update orders.', 'Access Denied', { duration: 5000 });
+      showErrorStable('You do not have permission to update orders.', 'Access Denied', { duration: 5000 });
     } else if (error.response?.status === 404) {
-      showError('Order not found.', 'Not Found', { duration: 5000 });
+      showErrorStable('Order not found.', 'Not Found', { duration: 5000 });
     } else if (error.message === 'Network Error') {
-      showError('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
+      showErrorStable('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
     } else {
-      showError('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
+      showErrorStable('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
     }
-  };
+  }, [showErrorStable]);
 
-  // Handle view order - using context instead of URL parameters
-  const handleViewOrder = (order) => {
-    // Store order in context
+  // Handle view order
+  const handleViewOrder = useCallback((order) => {
     selectOrder(order);
-    
-    // Navigate to single order page
     navigate('/order');
-  };
+  }, [selectOrder, navigate]);
 
+  // Setup and cleanup
   useEffect(() => {
+    isMountedRef.current = true;
     fetchOrders();
+    
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchOrders]);
 
-  // Filter orders based on search term and filters
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.id?.toString().includes(searchTerm) ||
-      order.order_number?.toString().includes(searchTerm) ||
-      order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items?.some(item => 
-        item.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Filter orders with memoization to prevent unnecessary recalculations
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch = 
+        order.id?.toString().includes(searchTerm) ||
+        order.order_number?.toString().includes(searchTerm) ||
+        order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.items?.some(item => 
+          item.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    const matchesStatus = 
-      !statusFilter || 
-      order.status?.toLowerCase() === statusFilter.toLowerCase();
+      const matchesStatus = 
+        !statusFilter || 
+        order.status?.toLowerCase() === statusFilter.toLowerCase();
 
-    const matchesDate = 
-      !dateFilter || 
-      (dateFilter === 'today' && isToday(order.created_at || order.order_date)) ||
-      (dateFilter === 'week' && isThisWeek(order.created_at || order.order_date)) ||
-      (dateFilter === 'month' && isThisMonth(order.created_at || order.order_date));
+      const matchesDate = 
+        !dateFilter || 
+        (dateFilter === 'today' && isToday(order.created_at || order.order_date)) ||
+        (dateFilter === 'week' && isThisWeek(order.created_at || order.order_date)) ||
+        (dateFilter === 'month' && isThisMonth(order.created_at || order.order_date));
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [orders, searchTerm, statusFilter, dateFilter]);
 
-  // Date helper functions
-  const isToday = (dateString) => {
+  // Date helper functions (memoized)
+  const isToday = useCallback((dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
     const today = new Date();
     return date.toDateString() === today.toDateString();
-  };
+  }, []);
 
-  const isThisWeek = (dateString) => {
+  const isThisWeek = useCallback((dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
     const today = new Date();
     const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
     startOfWeek.setHours(0, 0, 0, 0);
     return date >= startOfWeek;
-  };
+  }, []);
 
-  const isThisMonth = (dateString) => {
+  const isThisMonth = useCallback((dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
     const today = new Date();
     return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-  };
+  }, []);
 
-  const getStatusBadge = (status) => {
+  // Fixed status badge mapping
+  const getStatusBadge = useCallback((status) => {
     const statusMap = {
       pending: 'pending',
-      paided: 'paided',
+      paid: 'paid', // Fixed from 'paided' to 'paid'
       shipped: 'shipped',
       completed: 'completed',
       cancelled: 'cancelled'
     };
     return statusMap[status?.toLowerCase()] || 'pending';
-  };
+  }, []);
 
-  const formatPrice = (price) => {
+  // Formatting functions (memoized)
+  const formatPrice = useCallback((price) => {
     if (!price) return '₦0.00';
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN'
     }).format(price);
-  };
+  }, []);
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -205,45 +264,45 @@ const OrderList = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, []);
 
-  const handleStatusChange = async (orderId, currentStatus, newStatus) => {
+  const handleStatusChange = useCallback(async (orderId, currentStatus, newStatus) => {
     if (newStatus !== currentStatus) {
       await updateOrderStatusAPI(orderId, newStatus);
     }
-  };
+  }, [updateOrderStatusAPI]);
 
-  const handleStatusFilterChange = (e) => {
+  const handleStatusFilterChange = useCallback((e) => {
     setStatusFilter(e.target.value);
-  };
+  }, []);
 
-  const handleDateFilterChange = (e) => {
+  const handleDateFilterChange = useCallback((e) => {
     setDateFilter(e.target.value);
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchTerm('');
     setStatusFilter('');
     setDateFilter('');
-  };
+  }, []);
 
   const hasActiveFilters = searchTerm || statusFilter || dateFilter;
 
-  const getTotalItems = (order) => {
+  const getTotalItems = useCallback((order) => {
     return order.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
-  };
+  }, []);
 
-  const getOrderTotal = (order) => {
+  const getOrderTotal = useCallback((order) => {
     return order.total_amount || order.total || order.grand_total || 0;
-  };
+  }, []);
 
-  const getCustomerName = (order) => {
+  const getCustomerName = useCallback((order) => {
     return order.customer_name || order.customer?.name || order.user?.name || 'N/A';
-  };
+  }, []);
 
-  const getProductName = (item) => {
+  const getProductName = useCallback((item) => {
     return item.product_name || item.product?.name || 'Unknown Product';
-  };
+  }, []);
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -275,8 +334,9 @@ const OrderList = () => {
                       className="refresh-btn"
                       onClick={fetchOrders}
                       title="Refresh orders"
+                      disabled={isFetching}
                     >
-                      🔄 Refresh
+                      {isFetching ? '🔄 Loading...' : '🔄 Refresh'}
                     </button>
                   </div>
                 </div>
