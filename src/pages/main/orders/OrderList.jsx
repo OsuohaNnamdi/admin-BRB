@@ -18,7 +18,8 @@ const OrderList = () => {
   // Refs to prevent unnecessary re-renders
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
-  const isFetchingRef = useRef(false); // Use ref instead of state to prevent re-renders
+  const isFetchingRef = useRef(false);
+  const initialFetchDoneRef = useRef(false); // Track if initial fetch is done
   
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
   const {
@@ -143,7 +144,7 @@ const OrderList = () => {
     }
   }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable, handleUpdateError]);
 
-  // Stabilized fetchOrders function - NO dependencies that change
+  // Define fetchOrders with useCallback but with stable dependencies
   const fetchOrders = useCallback(async () => {
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) return;
@@ -187,7 +188,7 @@ const OrderList = () => {
         isFetchingRef.current = false;
       }
     }
-  }, [setLoading, updateOrders, showErrorStable]); // Only stable dependencies
+  }, [setLoading, updateOrders, showErrorStable]);
 
   // Handle view order
   const handleViewOrder = useCallback((order) => {
@@ -292,10 +293,12 @@ const OrderList = () => {
     return item.product_name || item.product?.name || 'Unknown Product';
   }, []);
 
-  // Fetch orders only once on mount
+  // Use a ref to track if we've done the initial fetch
   useEffect(() => {
-    isMountedRef.current = true;
-    fetchOrders();
+    if (!initialFetchDoneRef.current) {
+      initialFetchDoneRef.current = true;
+      fetchOrders();
+    }
     
     return () => {
       isMountedRef.current = false;
@@ -303,7 +306,7 @@ const OrderList = () => {
         abortControllerRef.current.abort();
       }
     };
-  }, []); // Empty dependency array - ONLY RUN ONCE
+  }, [fetchOrders]); // Now includes fetchOrders but won't cause infinite loop because of the ref
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -464,7 +467,7 @@ const OrderList = () => {
                                     ORD-{order.id.toString().padStart(4, '0')}
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="customer-info">
                                     <div className="customer-name">
                                       {getCustomerName(order)}
@@ -476,7 +479,7 @@ const OrderList = () => {
                                     )}
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="order-items">
                                     <div className="items-count">
                                       {getTotalItems(order)} items
@@ -494,12 +497,12 @@ const OrderList = () => {
                                     </div>
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="order-total">
                                     {formatPrice(getOrderTotal(order))}
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="status-control">
                                     <span className={`status-badge ${getStatusBadge(order.status)}`}>
                                       {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
@@ -517,12 +520,12 @@ const OrderList = () => {
                                     </select>
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="order-date">
                                     {formatDate(order.created_at || order.order_date)}
                                   </div>
                                 </td>
-                                 <td>
+                                <td>
                                   <div className="action-buttons">
                                     <button 
                                       className="action-btn view-btn"
@@ -533,7 +536,7 @@ const OrderList = () => {
                                     </button>
                                   </div>
                                 </td>
-                               </tr>
+                              </tr>
                             ))}
                           </tbody>
                         </table>
