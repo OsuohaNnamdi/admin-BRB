@@ -196,6 +196,7 @@
   gap: 10px;
 }
 
+/* Updated Status Badge Styles for Backend Statuses */
 .status-badge {
   padding: 6px 12px;
   border-radius: 20px;
@@ -204,12 +205,30 @@
   text-transform: capitalize;
 }
 
-.status-badge.pending { background: #fef3c7; color: #92400e; }
-.status-badge.confirmed { background: #d1fae5; color: #065f46; }
-.status-badge.processing { background: #dbeafe; color: #1e40af; }
-.status-badge.shipped { background: #e0e7ff; color: #3730a3; }
-.status-badge.delivered { background: #dcfce7; color: #166534; }
-.status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+.status-badge.pending { 
+  background: #fef3c7; 
+  color: #92400e; 
+}
+
+.status-badge.paid { 
+  background: #dbeafe; 
+  color: #1e40af; 
+}
+
+.status-badge.shipped { 
+  background: #e0e7ff; 
+  color: #3730a3; 
+}
+
+.status-badge.completed { 
+  background: #dcfce7; 
+  color: #166534; 
+}
+
+.status-badge.cancelled { 
+  background: #fee2e2; 
+  color: #991b1b; 
+}
 
 .status-select {
   padding: 6px 10px;
@@ -217,6 +236,11 @@
   border-radius: 6px;
   font-size: 12px;
   background: white;
+  cursor: pointer;
+}
+
+.status-select:hover {
+  border-color: #4299e1;
 }
 
 .order-date {
@@ -237,8 +261,13 @@
   transition: background 0.2s;
 }
 
-.view-btn { background: #edf2f7; }
-.view-btn:hover { background: #e2e8f0; }
+.view-btn { 
+  background: #edf2f7; 
+}
+
+.view-btn:hover { 
+  background: #e2e8f0; 
+}
 
 /* Mobile Cards */
 .mobile-view { display: none; }
@@ -725,5 +754,184 @@
   
   .quick-actions {
     flex-direction: column;
+  }
+}
+
+/* Current Status Display */
+.current-status-display {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.current-status-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Next Statuses Container */
+.next-statuses-container {
+  margin-bottom: 1.5rem;
+}
+
+.next-status-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.75rem;
+}
+
+.next-status-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.next-status-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.next-status-btn.paid {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.next-status-btn.shipped {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.next-status-btn.completed {
+  background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+  color: white;
+}
+
+.next-status-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.next-status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Cancel Action */
+.cancel-action {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.cancel-status-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.cancel-status-btn:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-warning {
+  display: block;
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: #dc3545;
+}
+
+/* Terminal Status Message */
+.terminal-status-message {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.terminal-message {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.terminal-note {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Timeline Status Badge */
+.timeline-status {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: #007bff;
+  color: white;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.timeline-status.cancelled {
+  background: #dc3545;
+}
+
+/* Timeline Item States */
+.timeline-item.completed .timeline-marker {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+.timeline-item.completed .timeline-marker::before {
+  content: '✓';
+  color: white;
+  position: absolute;
+  font-size: 12px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.timeline-item.active .timeline-marker {
+  background: #007bff;
+  border-color: #007bff;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
   }
 }

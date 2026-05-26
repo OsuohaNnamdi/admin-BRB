@@ -18,17 +18,14 @@ const OrderList = () => {
   // Refs to prevent unnecessary re-renders
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
-  const isFetchingRef = useRef(false);
-  const initialFetchDoneRef = useRef(false); // Track if initial fetch is done
   
-  const { showSuccess, showError, showLoading, removeAlert } = useAlert();
+  const { showSuccess, showError } = useAlert();
   const {
     orders,
     loading,
     selectOrder,
     updateOrders,
-    updateOrderStatus,
-    setLoading
+    updateOrderStatus
   } = useOrder();
   
   const navigate = useNavigate();
@@ -42,14 +39,6 @@ const OrderList = () => {
     showSuccess(message, title);
   }, [showSuccess]);
 
-  const showLoadingStable = useCallback((message, title) => {
-    return showLoading(message, title);
-  }, [showLoading]);
-
-  const removeAlertStable = useCallback((id) => {
-    if (id) removeAlert(id);
-  }, [removeAlert]);
-
   const toggleSidebar = useCallback(() => {
     setSidebarOpen(prev => !prev);
   }, []);
@@ -58,7 +47,7 @@ const OrderList = () => {
     setSidebarOpen(false);
   }, []);
 
-  // Date helper functions
+  // Date helper functions (defined before useMemo)
   const isToday = useCallback((dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
@@ -82,7 +71,7 @@ const OrderList = () => {
     return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   }, []);
 
-  // Error handler
+  // Error handler defined before it's used
   const handleUpdateError = useCallback((error) => {
     if (error.response?.data) {
       const backendErrors = error.response.data;
@@ -112,12 +101,9 @@ const OrderList = () => {
     }
   }, [showErrorStable]);
 
-  // Updated updateOrderStatusAPI
+  // Updated updateOrderStatusAPI without loading indicators
   const updateOrderStatusAPI = useCallback(async (orderId, newStatus) => {
-    let loadingAlertId;
     try {
-      loadingAlertId = showLoadingStable('Updating order status...', 'Processing');
-      
       const statusData = {
         status: newStatus
       };
@@ -129,29 +115,17 @@ const OrderList = () => {
       // Update the order status in context
       updateOrderStatus(orderId, newStatus);
       
-      if (loadingAlertId) {
-        removeAlertStable(loadingAlertId);
-      }
       showSuccessStable('Order status updated successfully!', 'Update Successful');
     } catch (error) {
       if (!isMountedRef.current) return;
       
       console.error('Error updating order status:', error);
-      if (loadingAlertId) {
-        removeAlertStable(loadingAlertId);
-      }
       handleUpdateError(error);
     }
-  }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable, handleUpdateError]);
+  }, [updateOrderStatus, showSuccessStable, handleUpdateError]);
 
-  // Define fetchOrders with useCallback but with stable dependencies
+  // Stabilized fetchOrders function without loading indicators
   const fetchOrders = useCallback(async () => {
-    // Prevent multiple simultaneous fetches
-    if (isFetchingRef.current) return;
-    
-    isFetchingRef.current = true;
-    setLoading(true);
-    
     // Cancel previous request if exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -182,13 +156,8 @@ const OrderList = () => {
         );
         updateOrders([]);
       }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-        isFetchingRef.current = false;
-      }
     }
-  }, [setLoading, updateOrders, showErrorStable]);
+  }, [updateOrders, showErrorStable]);
 
   // Handle view order
   const handleViewOrder = useCallback((order) => {
@@ -196,7 +165,20 @@ const OrderList = () => {
     navigate('/order');
   }, [selectOrder, navigate]);
 
-  // Filter orders with memoization
+  // Setup and cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    fetchOrders();
+    
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchOrders]);
+
+  // Filter orders with memoization - now includes all dependencies
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch = 
@@ -223,19 +205,19 @@ const OrderList = () => {
     });
   }, [orders, searchTerm, statusFilter, dateFilter, isToday, isThisWeek, isThisMonth]);
 
-  // Fixed status badge mapping
+  // Fixed status badge mapping - maps backend statuses to CSS classes
   const getStatusBadge = useCallback((status) => {
     const statusMap = {
       pending: 'pending',
-      paid: 'paid',
+      paid: 'paid',        // Maps to 'paid' CSS class
       shipped: 'shipped',
-      completed: 'completed',
+      completed: 'completed', // Maps to 'completed' CSS class
       cancelled: 'cancelled'
     };
     return statusMap[status?.toLowerCase()] || 'pending';
   }, []);
 
-  // Formatting functions
+  // Formatting functions (memoized)
   const formatPrice = useCallback((price) => {
     if (!price) return '₦0.00';
     return new Intl.NumberFormat('en-NG', {
@@ -293,21 +275,6 @@ const OrderList = () => {
     return item.product_name || item.product?.name || 'Unknown Product';
   }, []);
 
-  // Use a ref to track if we've done the initial fetch
-  useEffect(() => {
-    if (!initialFetchDoneRef.current) {
-      initialFetchDoneRef.current = true;
-      fetchOrders();
-    }
-    
-    return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchOrders]); // Now includes fetchOrders but won't cause infinite loop because of the ref
-
   return (
     <div className="__variable_9eb1a5 body">
       <div className="menu-style"></div>
@@ -338,9 +305,8 @@ const OrderList = () => {
                       className="refresh-btn"
                       onClick={fetchOrders}
                       title="Refresh orders"
-                      disabled={loading}
                     >
-                      {loading ? '🔄 Loading...' : '🔄 Refresh'}
+                      🔄 Refresh
                     </button>
                   </div>
                 </div>

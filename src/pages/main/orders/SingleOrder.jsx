@@ -34,96 +34,98 @@ const SingleOrder = () => {
     clearSelectedOrder();
     navigate('/orders');
   };
-// Update order status - both in API and context
-const updateOrderStatus = async (newStatus) => {
-  if (!selectedOrder?.id) {
-    showError('No order selected', 'Error', { duration: 5000 });
-    return;
-  }
-  
-  setUpdating(true);
-  try {
-    const loadingAlertId = showLoading('Updating order status...', 'Processing');
-    
-    // Update in API - Ensure proper data format
-    const statusData = {
-      status: newStatus
-    };
-    
-    console.log('Updating order status:', {
-      orderId: selectedOrder.id,
-      statusData: statusData
-    });
-    
-    await ApiService.updateOrderStatus(selectedOrder.id, statusData);
-    
-    // Update in context
-    updateOrderInContext(selectedOrder.id, newStatus);
-    
-    removeAlert(loadingAlertId);
-    showSuccess('Order status updated successfully!', 'Update Successful');
 
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    console.error('Error details:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      headers: error.response?.headers
-    });
-    handleUpdateError(error);
-  } finally {
-    setUpdating(false);
-  }
-};
-
-const handleUpdateError = (error) => {
-  console.log('Full error object:', error);
-  
-  if (error.response?.data) {
-    const backendErrors = error.response.data;
-    let errorMessage = 'Failed to update order. ';
-    
-    // Check if backendErrors is an object
-    if (typeof backendErrors === 'object') {
-      Object.keys(backendErrors).forEach(key => {
-        if (Array.isArray(backendErrors[key])) {
-          errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
-        } else if (typeof backendErrors[key] === 'string') {
-          errorMessage += `${key}: ${backendErrors[key]} `;
-        } else {
-          errorMessage += `${key}: ${JSON.stringify(backendErrors[key])} `;
-        }
-      });
-    } else if (typeof backendErrors === 'string') {
-      errorMessage = backendErrors;
+  // Update order status - both in API and context
+  const updateOrderStatus = async (newStatus) => {
+    if (!selectedOrder?.id) {
+      showError('No order selected', 'Error', { duration: 5000 });
+      return;
     }
     
-    showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
-  } else if (error.response?.status === 400) {
-    showError('Bad request. Invalid status data.', 'Validation Error', { duration: 5000 });
-  } else if (error.response?.status === 404) {
-    showError('Order not found. The order may have been deleted.', 'Not Found', { duration: 5000 });
-    navigate('/orders');
-  } else if (error.message === 'Network Error') {
-    showError('Network error. Please check your internet connection.', 'Connection Error', { duration: 5000 });
-  } else if (error.code === 'ECONNABORTED') {
-    showError('Request timeout. Please try again.', 'Timeout Error', { duration: 5000 });
-  } else if (!error.response) {
-    showError('No response from server. Please check if the server is running.', 'Server Error', { duration: 5000 });
-  } else {
-    showError(`Failed to update order: ${error.message}`, 'Update Failed', { duration: 5000 });
-  }
-};
+    setUpdating(true);
+    try {
+      const loadingAlertId = showLoading('Updating order status...', 'Processing');
+      
+      // Update in API - Ensure proper data format
+      const statusData = {
+        status: newStatus
+      };
+      
+      console.log('Updating order status:', {
+        orderId: selectedOrder.id,
+        statusData: statusData
+      });
+      
+      await ApiService.updateOrderStatus(selectedOrder.id, statusData);
+      
+      // Update in context
+      updateOrderInContext(selectedOrder.id, newStatus);
+      
+      removeAlert(loadingAlertId);
+      showSuccess('Order status updated successfully!', 'Update Successful');
+
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
+      });
+      handleUpdateError(error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUpdateError = (error) => {
+    console.log('Full error object:', error);
+    
+    if (error.response?.data) {
+      const backendErrors = error.response.data;
+      let errorMessage = 'Failed to update order. ';
+      
+      // Check if backendErrors is an object
+      if (typeof backendErrors === 'object') {
+        Object.keys(backendErrors).forEach(key => {
+          if (Array.isArray(backendErrors[key])) {
+            errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
+          } else if (typeof backendErrors[key] === 'string') {
+            errorMessage += `${key}: ${backendErrors[key]} `;
+          } else {
+            errorMessage += `${key}: ${JSON.stringify(backendErrors[key])} `;
+          }
+        });
+      } else if (typeof backendErrors === 'string') {
+        errorMessage = backendErrors;
+      }
+      
+      showError(errorMessage.trim(), 'Update Failed', { duration: 6000 });
+    } else if (error.response?.status === 400) {
+      showError('Bad request. Invalid status data.', 'Validation Error', { duration: 5000 });
+    } else if (error.response?.status === 404) {
+      showError('Order not found. The order may have been deleted.', 'Not Found', { duration: 5000 });
+      navigate('/orders');
+    } else if (error.message === 'Network Error') {
+      showError('Network error. Please check your internet connection.', 'Connection Error', { duration: 5000 });
+    } else if (error.code === 'ECONNABORTED') {
+      showError('Request timeout. Please try again.', 'Timeout Error', { duration: 5000 });
+    } else if (!error.response) {
+      showError('No response from server. Please check if the server is running.', 'Server Error', { duration: 5000 });
+    } else {
+      showError(`Failed to update order: ${error.message}`, 'Update Failed', { duration: 5000 });
+    }
+  };
+
+  console.log('Selected order data:', selectedOrder);
 
   const getStatusBadge = (status) => {
     if (!status) return 'pending';
     const statusMap = {
       pending: 'pending',
-      confirmed: 'confirmed',
-      processing: 'processing',
+      paid: 'paid',
       shipped: 'shipped',
-      delivered: 'delivered',
+      completed: 'completed',
       cancelled: 'cancelled'
     };
     return statusMap[status] || 'pending';
@@ -148,17 +150,38 @@ const handleUpdateError = (error) => {
     });
   };
 
-  const getStatusOptions = (currentStatus) => {
+  // Get only the next available statuses (no previous or current)
+  const getNextStatuses = (currentStatus) => {
     if (!currentStatus) return [];
-    const statusFlow = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['processing', 'cancelled'],
-      processing: ['shipped', 'cancelled'],
-      shipped: ['delivered'],
-      delivered: [],
-      cancelled: []
+    
+    // Define the forward-only workflow
+    const workflow = {
+      pending: ['paid'],  // Only next: paid (no cancellation allowed here - handle separately)
+      paid: ['shipped'],  // Only next: shipped
+      shipped: ['completed'], // Only next: completed
+      completed: [],      // No next status
+      cancelled: []       // No next status (terminal)
     };
-    return statusFlow[currentStatus] || [];
+    
+    return workflow[currentStatus] || [];
+  };
+
+  // Check if cancellation is allowed for current status
+  const canCancel = (currentStatus) => {
+    const cancellableStatuses = ['pending', 'paid', 'shipped'];
+    return cancellableStatuses.includes(currentStatus);
+  };
+
+  // Get display name for status
+  const getStatusDisplayName = (status) => {
+    const names = {
+      pending: 'Pending',
+      paid: 'Paid',
+      shipped: 'Shipped',
+      completed: 'Completed',
+      cancelled: 'Cancelled'
+    };
+    return names[status] || status;
   };
 
   const getTotalItems = () => {
@@ -169,6 +192,30 @@ const handleUpdateError = (error) => {
   const getSubtotal = () => {
     if (!selectedOrder?.items) return 0;
     return selectedOrder.items.reduce((total, item) => total + (parseFloat(item.unit_price || 0) * (item.quantity || 1)), 0);
+  };
+
+  // Helper function to check if a status is completed or should be treated as delivered
+  const isDelivered = (status) => {
+    return status === 'completed' || status === 'delivered';
+  };
+
+  // Check if a timeline step is completed
+  const isTimelineStepCompleted = (currentStatus, stepName) => {
+    const stepOrder = ['pending', 'paid', 'shipped', 'completed'];
+    const currentIndex = stepOrder.indexOf(currentStatus);
+    const stepIndex = stepOrder.indexOf(stepName);
+    
+    if (currentStatus === 'cancelled') {
+      return stepName === 'pending'; // Only first step shows as completed if cancelled
+    }
+    
+    return stepIndex <= currentIndex;
+  };
+
+  // Check if timeline step is active (current)
+  const isTimelineStepActive = (currentStatus, stepName) => {
+    if (currentStatus === 'cancelled') return false;
+    return currentStatus === stepName;
   };
 
   // If no order is selected, show error
@@ -191,6 +238,9 @@ const handleUpdateError = (error) => {
   }
 
   const order = selectedOrder;
+  const nextStatuses = getNextStatuses(order?.status);
+  const showCancelOption = canCancel(order?.status);
+  const isTerminalStatus = order?.status === 'completed' || order?.status === 'cancelled';
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -305,36 +355,61 @@ const handleUpdateError = (error) => {
                   <div className="order-actions-section">
                     <div className="action-card">
                       <h4>Update Status</h4>
-                      <div className="status-control-group">
-                        <label htmlFor="status-select">Current Status: </label>
-                        <select 
-                          id="status-select"
-                          className="status-select"
-                          value={order?.status || 'pending'}
-                          onChange={(e) => updateOrderStatus(e.target.value)}
-                          disabled={updating}
-                        >
-                         <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                        </select>
-                        {updating && <div className="updating-spinner"></div>}
-                      </div>
-                      <div className="status-help">
-                        <p>Next available statuses:</p>
-                        <div className="available-statuses">
-                          {getStatusOptions(order?.status).map(status => (
-                            <span key={status} className="available-status">
-                              {status}
+                      
+                      {!isTerminalStatus && (
+                        <>
+                          <div className="current-status-display">
+                            <p className="current-status-label">Current Status:</p>
+                            <span className={`status-badge ${getStatusBadge(order?.status)}`}>
+                              {getStatusDisplayName(order?.status)}
                             </span>
-                          ))}
-                          {getStatusOptions(order?.status).length === 0 && (
-                            <span className="no-status">No further status changes available</span>
+                          </div>
+
+                          {nextStatuses.length > 0 && (
+                            <div className="next-statuses-container">
+                              <p className="next-status-label">Next Available Update:</p>
+                              <div className="next-status-buttons">
+                                {nextStatuses.map(status => (
+                                  <button
+                                    key={status}
+                                    className={`next-status-btn ${status}`}
+                                    onClick={() => updateOrderStatus(status)}
+                                    disabled={updating}
+                                  >
+                                    Move to {getStatusDisplayName(status)}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           )}
+
+                          {showCancelOption && (
+                            <div className="cancel-action">
+                              <button
+                                className="cancel-status-btn"
+                                onClick={() => updateOrderStatus('cancelled')}
+                                disabled={updating}
+                              >
+                                Cancel Order
+                              </button>
+                              <small className="cancel-warning">⚠️ This action cannot be undone</small>
+                            </div>
+                          )}
+
+                          {updating && <div className="updating-spinner"></div>}
+                        </>
+                      )}
+
+                      {isTerminalStatus && (
+                        <div className="terminal-status-message">
+                          <p className="terminal-message">
+                            {order?.status === 'completed' 
+                              ? '✅ This order has been completed and delivered.' 
+                              : '❌ This order has been cancelled.'}
+                          </p>
+                          <p className="terminal-note">No further status updates are available.</p>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="action-card">
@@ -387,43 +462,50 @@ const handleUpdateError = (error) => {
                   </div>
                 </div>
 
-                {/* Order Timeline */}
+                {/* Order Timeline - Shows full history with forward-only progression */}
                 <div className="order-section">
                   <h3>Order Timeline</h3>
                   <div className="timeline">
-                    <div className={`timeline-item ${order?.status === 'pending' ? 'active' : 'completed'}`}>
+                    <div className={`timeline-item ${isTimelineStepCompleted(order?.status, 'pending') ? 'completed' : ''} ${isTimelineStepActive(order?.status, 'pending') ? 'active' : ''}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Order Placed</h4>
                         <p>{formatDate(order?.created_at)}</p>
+                        {isTimelineStepActive(order?.status, 'pending') && <span className="timeline-status">Current</span>}
                       </div>
                     </div>
-                    <div className={`timeline-item ${order?.status === 'confirmed' ? 'active' : order?.status === 'pending' ? 'pending' : 'completed'}`}>
+                    
+                    <div className={`timeline-item ${isTimelineStepCompleted(order?.status, 'paid') ? 'completed' : ''} ${isTimelineStepActive(order?.status, 'paid') ? 'active' : ''}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
-                        <h4>Order Confirmed</h4>
-                        <p>{order?.status === 'confirmed' ? 'Order confirmed' : 'Waiting for confirmation'}</p>
+                        <h4>Payment Confirmed</h4>
+                        <p>{isTimelineStepCompleted(order?.status, 'paid') ? 'Payment received' : 
+                              order?.status === 'cancelled' ? 'Order cancelled' : 
+                              isTimelineStepActive(order?.status, 'paid') ? 'Payment confirmed - Awaiting shipment' : 'Awaiting payment'}</p>
+                        {isTimelineStepActive(order?.status, 'paid') && <span className="timeline-status">Current</span>}
                       </div>
                     </div>
-                    <div className={`timeline-item ${order?.status === 'processing' ? 'active' : ['pending', 'confirmed'].includes(order?.status) ? 'pending' : 'completed'}`}>
-                      <div className="timeline-marker"></div>
-                      <div className="timeline-content">
-                        <h4>Processing</h4>
-                        <p>{order?.status === 'processing' ? 'Order being prepared' : 'Not yet processing'}</p>
-                      </div>
-                    </div>
-                    <div className={`timeline-item ${order?.status === 'shipped' ? 'active' : ['pending', 'confirmed', 'processing'].includes(order?.status) ? 'pending' : 'completed'}`}>
+                    
+                    <div className={`timeline-item ${isTimelineStepCompleted(order?.status, 'shipped') ? 'completed' : ''} ${isTimelineStepActive(order?.status, 'shipped') ? 'active' : ''}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Shipped</h4>
-                        <p>{order?.status === 'shipped' ? 'Order in transit' : 'Not yet shipped'}</p>
+                        <p>{isTimelineStepCompleted(order?.status, 'shipped') ? 'Order in transit' : 
+                              order?.status === 'cancelled' ? 'Order cancelled' : 
+                              isTimelineStepActive(order?.status, 'shipped') ? 'Order shipped - In transit' : 'Not yet shipped'}</p>
+                        {isTimelineStepActive(order?.status, 'shipped') && <span className="timeline-status">Current</span>}
                       </div>
                     </div>
-                    <div className={`timeline-item ${order?.status === 'delivered' ? 'active' : order?.status === 'cancelled' ? 'cancelled' : 'pending'}`}>
+                    
+                    <div className={`timeline-item ${isDelivered(order?.status) ? 'active' : isTimelineStepCompleted(order?.status, 'completed') ? 'completed' : ''}`}>
                       <div className="timeline-marker"></div>
                       <div className="timeline-content">
                         <h4>Delivered</h4>
-                        <p>{order?.status === 'delivered' ? 'Order completed' : order?.status === 'cancelled' ? 'Order cancelled' : 'Not yet delivered'}</p>
+                        <p>{order?.status === 'completed' ? '✅ Order completed and delivered' : 
+                              order?.status === 'cancelled' ? '❌ Order cancelled' : 
+                              isTimelineStepActive(order?.status, 'completed') ? 'Delivery in progress' : 'Not yet delivered'}</p>
+                        {order?.status === 'completed' && <span className="timeline-status">Completed</span>}
+                        {order?.status === 'cancelled' && <span className="timeline-status cancelled">Cancelled</span>}
                       </div>
                     </div>
                   </div>
