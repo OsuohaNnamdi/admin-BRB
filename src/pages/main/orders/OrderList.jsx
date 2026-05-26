@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import '../../../styles/OrderList.css';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -57,6 +57,92 @@ const OrderList = () => {
     setSidebarOpen(false);
   }, []);
 
+  // Date helper functions (defined before useMemo)
+  const isToday = useCallback((dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }, []);
+
+  const isThisWeek = useCallback((dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const today = new Date();
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    return date >= startOfWeek;
+  }, []);
+
+  const isThisMonth = useCallback((dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const today = new Date();
+    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+  }, []);
+
+  // Error handler defined before it's used
+  const handleUpdateError = useCallback((error) => {
+    if (error.response?.data) {
+      const backendErrors = error.response.data;
+      let errorMessage = 'Failed to update order. ';
+      
+      Object.keys(backendErrors).forEach(key => {
+        if (Array.isArray(backendErrors[key])) {
+          errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
+        } else {
+          errorMessage += `${key}: ${backendErrors[key]} `;
+        }
+      });
+      
+      showErrorStable(errorMessage.trim(), 'Update Failed', { duration: 6000 });
+    } else if (error.response?.status === 400) {
+      showErrorStable('Invalid status data.', 'Validation Error', { duration: 5000 });
+    } else if (error.response?.status === 401) {
+      showErrorStable('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
+    } else if (error.response?.status === 403) {
+      showErrorStable('You do not have permission to update orders.', 'Access Denied', { duration: 5000 });
+    } else if (error.response?.status === 404) {
+      showErrorStable('Order not found.', 'Not Found', { duration: 5000 });
+    } else if (error.message === 'Network Error') {
+      showErrorStable('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
+    } else {
+      showErrorStable('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
+    }
+  }, [showErrorStable]);
+
+  // Updated updateOrderStatusAPI with proper error handling
+  const updateOrderStatusAPI = useCallback(async (orderId, newStatus) => {
+    let loadingAlertId;
+    try {
+      loadingAlertId = showLoadingStable('Updating order status...', 'Processing');
+      
+      const statusData = {
+        status: newStatus
+      };
+      
+      await ApiService.updateOrderStatus(orderId, statusData);
+      
+      if (!isMountedRef.current) return;
+      
+      // Update the order status in context
+      updateOrderStatus(orderId, newStatus);
+      
+      if (loadingAlertId) {
+        removeAlertStable(loadingAlertId);
+      }
+      showSuccessStable('Order status updated successfully!', 'Update Successful');
+    } catch (error) {
+      if (!isMountedRef.current) return;
+      
+      console.error('Error updating order status:', error);
+      if (loadingAlertId) {
+        removeAlertStable(loadingAlertId);
+      }
+      handleUpdateError(error);
+    }
+  }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable, handleUpdateError]);
+
   // Stabilized fetchOrders function
   const fetchOrders = useCallback(async () => {
     // Prevent multiple simultaneous fetches
@@ -103,67 +189,6 @@ const OrderList = () => {
     }
   }, [setLoading, updateOrders, showErrorStable, isFetching]);
 
-  // Updated updateOrderStatusAPI with proper error handling
-  const updateOrderStatusAPI = useCallback(async (orderId, newStatus) => {
-    let loadingAlertId;
-    try {
-      loadingAlertId = showLoadingStable('Updating order status...', 'Processing');
-      
-      const statusData = {
-        status: newStatus
-      };
-      
-      await ApiService.updateOrderStatus(orderId, statusData);
-      
-      if (!isMountedRef.current) return;
-      
-      // Update the order status in context
-      updateOrderStatus(orderId, newStatus);
-      
-      if (loadingAlertId) {
-        removeAlertStable(loadingAlertId);
-      }
-      showSuccessStable('Order status updated successfully!', 'Update Successful');
-    } catch (error) {
-      if (!isMountedRef.current) return;
-      
-      console.error('Error updating order status:', error);
-      if (loadingAlertId) {
-        removeAlertStable(loadingAlertId);
-      }
-      handleUpdateError(error);
-    }
-  }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable]);
-
-  const handleUpdateError = useCallback((error) => {
-    if (error.response?.data) {
-      const backendErrors = error.response.data;
-      let errorMessage = 'Failed to update order. ';
-      
-      Object.keys(backendErrors).forEach(key => {
-        if (Array.isArray(backendErrors[key])) {
-          errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
-        } else {
-          errorMessage += `${key}: ${backendErrors[key]} `;
-        }
-      });
-      
-      showErrorStable(errorMessage.trim(), 'Update Failed', { duration: 6000 });
-    } else if (error.response?.status === 400) {
-      showErrorStable('Invalid status data.', 'Validation Error', { duration: 5000 });
-    } else if (error.response?.status === 401) {
-      showErrorStable('Authentication required. Please login again.', 'Session Expired', { duration: 5000 });
-    } else if (error.response?.status === 403) {
-      showErrorStable('You do not have permission to update orders.', 'Access Denied', { duration: 5000 });
-    } else if (error.response?.status === 404) {
-      showErrorStable('Order not found.', 'Not Found', { duration: 5000 });
-    } else if (error.message === 'Network Error') {
-      showErrorStable('Network error. Please check your connection.', 'Connection Error', { duration: 5000 });
-    } else {
-      showErrorStable('Failed to update order. Please try again.', 'Update Failed', { duration: 5000 });
-    }
-  }, [showErrorStable]);
-
   // Handle view order
   const handleViewOrder = useCallback((order) => {
     selectOrder(order);
@@ -183,8 +208,8 @@ const OrderList = () => {
     };
   }, [fetchOrders]);
 
-  // Filter orders with memoization to prevent unnecessary recalculations
-  const filteredOrders = React.useMemo(() => {
+  // Filter orders with memoization - now includes all dependencies
+  const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch = 
         order.id?.toString().includes(searchTerm) ||
@@ -208,31 +233,7 @@ const OrderList = () => {
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [orders, searchTerm, statusFilter, dateFilter]);
-
-  // Date helper functions (memoized)
-  const isToday = useCallback((dateString) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  }, []);
-
-  const isThisWeek = useCallback((dateString) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-    startOfWeek.setHours(0, 0, 0, 0);
-    return date >= startOfWeek;
-  }, []);
-
-  const isThisMonth = useCallback((dateString) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    const today = new Date();
-    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-  }, []);
+  }, [orders, searchTerm, statusFilter, dateFilter, isToday, isThisWeek, isThisMonth]);
 
   // Fixed status badge mapping
   const getStatusBadge = useCallback((status) => {
