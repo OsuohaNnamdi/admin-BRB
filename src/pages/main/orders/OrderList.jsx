@@ -14,11 +14,11 @@ const OrderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const [isFetching, setIsFetching] = useState(false);
   
   // Refs to prevent unnecessary re-renders
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef(null);
+  const isFetchingRef = useRef(false); // Use ref instead of state to prevent re-renders
   
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
   const {
@@ -57,7 +57,7 @@ const OrderList = () => {
     setSidebarOpen(false);
   }, []);
 
-  // Date helper functions (defined before useMemo)
+  // Date helper functions
   const isToday = useCallback((dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
@@ -81,7 +81,7 @@ const OrderList = () => {
     return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   }, []);
 
-  // Error handler defined before it's used
+  // Error handler
   const handleUpdateError = useCallback((error) => {
     if (error.response?.data) {
       const backendErrors = error.response.data;
@@ -111,7 +111,7 @@ const OrderList = () => {
     }
   }, [showErrorStable]);
 
-  // Updated updateOrderStatusAPI with proper error handling
+  // Updated updateOrderStatusAPI
   const updateOrderStatusAPI = useCallback(async (orderId, newStatus) => {
     let loadingAlertId;
     try {
@@ -143,12 +143,12 @@ const OrderList = () => {
     }
   }, [updateOrderStatus, showLoadingStable, removeAlertStable, showSuccessStable, handleUpdateError]);
 
-  // Stabilized fetchOrders function
+  // Stabilized fetchOrders function - NO dependencies that change
   const fetchOrders = useCallback(async () => {
     // Prevent multiple simultaneous fetches
-    if (isFetching) return;
+    if (isFetchingRef.current) return;
     
-    setIsFetching(true);
+    isFetchingRef.current = true;
     setLoading(true);
     
     // Cancel previous request if exists
@@ -184,10 +184,10 @@ const OrderList = () => {
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
-        setIsFetching(false);
+        isFetchingRef.current = false;
       }
     }
-  }, [setLoading, updateOrders, showErrorStable, isFetching]);
+  }, [setLoading, updateOrders, showErrorStable]); // Only stable dependencies
 
   // Handle view order
   const handleViewOrder = useCallback((order) => {
@@ -195,20 +195,7 @@ const OrderList = () => {
     navigate('/order');
   }, [selectOrder, navigate]);
 
-  // Setup and cleanup
-  useEffect(() => {
-    isMountedRef.current = true;
-    fetchOrders();
-    
-    return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchOrders]);
-
-  // Filter orders with memoization - now includes all dependencies
+  // Filter orders with memoization
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       const matchesSearch = 
@@ -239,7 +226,7 @@ const OrderList = () => {
   const getStatusBadge = useCallback((status) => {
     const statusMap = {
       pending: 'pending',
-      paid: 'paid', // Fixed from 'paided' to 'paid'
+      paid: 'paid',
       shipped: 'shipped',
       completed: 'completed',
       cancelled: 'cancelled'
@@ -247,7 +234,7 @@ const OrderList = () => {
     return statusMap[status?.toLowerCase()] || 'pending';
   }, []);
 
-  // Formatting functions (memoized)
+  // Formatting functions
   const formatPrice = useCallback((price) => {
     if (!price) return '₦0.00';
     return new Intl.NumberFormat('en-NG', {
@@ -305,6 +292,19 @@ const OrderList = () => {
     return item.product_name || item.product?.name || 'Unknown Product';
   }, []);
 
+  // Fetch orders only once on mount
+  useEffect(() => {
+    isMountedRef.current = true;
+    fetchOrders();
+    
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []); // Empty dependency array - ONLY RUN ONCE
+
   return (
     <div className="__variable_9eb1a5 body">
       <div className="menu-style"></div>
@@ -335,9 +335,9 @@ const OrderList = () => {
                       className="refresh-btn"
                       onClick={fetchOrders}
                       title="Refresh orders"
-                      disabled={isFetching}
+                      disabled={loading}
                     >
-                      {isFetching ? '🔄 Loading...' : '🔄 Refresh'}
+                      {loading ? '🔄 Loading...' : '🔄 Refresh'}
                     </button>
                   </div>
                 </div>
@@ -464,7 +464,7 @@ const OrderList = () => {
                                     ORD-{order.id.toString().padStart(4, '0')}
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="customer-info">
                                     <div className="customer-name">
                                       {getCustomerName(order)}
@@ -476,7 +476,7 @@ const OrderList = () => {
                                     )}
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="order-items">
                                     <div className="items-count">
                                       {getTotalItems(order)} items
@@ -494,12 +494,12 @@ const OrderList = () => {
                                     </div>
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="order-total">
                                     {formatPrice(getOrderTotal(order))}
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="status-control">
                                     <span className={`status-badge ${getStatusBadge(order.status)}`}>
                                       {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
@@ -517,12 +517,12 @@ const OrderList = () => {
                                     </select>
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="order-date">
                                     {formatDate(order.created_at || order.order_date)}
                                   </div>
                                 </td>
-                                <td>
+                                 <td>
                                   <div className="action-buttons">
                                     <button 
                                       className="action-btn view-btn"
@@ -533,7 +533,7 @@ const OrderList = () => {
                                     </button>
                                   </div>
                                 </td>
-                              </tr>
+                               </tr>
                             ))}
                           </tbody>
                         </table>
