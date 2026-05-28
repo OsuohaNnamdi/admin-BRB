@@ -75,7 +75,9 @@ class ApiService {
     return apiClient.delete(`/admin/products/${id}/`, {}, true);
   }
 
- // Add these to your ApiService.js
+  async getUserAddress(addressId) {
+    return apiClient.get(`/admin/addresses/${addressId}/`, {}, true);
+  }
 
 // Admin Categories Management
   async getAdminCategories() {
