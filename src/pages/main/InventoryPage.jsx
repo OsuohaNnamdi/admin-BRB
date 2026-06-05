@@ -21,6 +21,14 @@ const InventoryPage = () => {
   const [searchedProducts, setSearchedProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    pageSize: 10
+  });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
@@ -31,17 +39,37 @@ const InventoryPage = () => {
     setSidebarOpen(false);
   };
 
-  // API functions - Updated to use the correct endpoints
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  // API functions - Updated to handle paginated response
+  const fetchProducts = useCallback(async (page = 1, append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
-      const response = await ApiService.getAdminInventory();
+      const response = await ApiService.getAdminInventory(page);
       console.log('Inventory fetched:', response.data);
       
-      // Handle the response format from GET /api/v1/admin/inventory/
-      const productsData = response.data.products || response.data || [];
-      setProducts(productsData);
-      setFilteredProducts(productsData);
+      // Handle the paginated response format
+      const { results, count, total_pages, current_page, page_size } = response.data;
+      
+      const productsData = results || [];
+      
+      if (append) {
+        setProducts(prevProducts => [...prevProducts, ...productsData]);
+      } else {
+        setProducts(productsData);
+        setFilteredProducts(productsData);
+      }
+      
+      // Update pagination state
+      setPagination({
+        currentPage: current_page || page,
+        totalPages: total_pages || 1,
+        totalCount: count || 0,
+        pageSize: page_size || 10
+      });
       
     } catch (error) {
       console.error('Error fetching inventory:', error);
@@ -50,12 +78,21 @@ const InventoryPage = () => {
         'Load Error',
         { duration: 5000 }
       );
-      setProducts([]);
-      setFilteredProducts([]);
+      if (!append) {
+        setProducts([]);
+        setFilteredProducts([]);
+      }
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
   }, [showError]);
+
+  const loadMoreProducts = useCallback(() => {
+    if (pagination.currentPage < pagination.totalPages && !isLoadingMore) {
+      fetchProducts(pagination.currentPage + 1, true);
+    }
+  }, [pagination.currentPage, pagination.totalPages, isLoadingMore, fetchProducts]);
 
   const searchProducts = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
@@ -64,11 +101,11 @@ const InventoryPage = () => {
     }
 
     try {
-      // Use the search endpoint
-      const response = await ApiService.searchProducts(searchQuery);
+      // Use the search endpoint with pagination
+      const response = await ApiService.searchProducts(searchQuery, 1, 10);
       
-      // Handle search response format
-      const searchResults = response.data.products || response.data || [];
+      // Handle search response format (might be paginated too)
+      const searchResults = response.data.results || response.data.products || response.data || [];
       setSearchedProducts(searchResults.slice(0, 10)); // Limit to 10 results
     } catch (error) {
       console.error('Error searching products:', error);
@@ -98,10 +135,12 @@ const InventoryPage = () => {
     return await adjustStock(productId, parseInt(quantityToAdd));
   }, [adjustStock]);
 
+  // Initial load
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1, false);
   }, [fetchProducts]);
 
+  // Filter products when search/filters change
   useEffect(() => {
     let filtered = products;
 
@@ -169,8 +208,8 @@ const InventoryPage = () => {
       
       showSuccess(`Added ${quantity} units to ${selectedProduct.name}. New stock: ${newStock}`, 'Stock Updated');
       
-      // Refresh products
-      await fetchProducts();
+      // Refresh products - reset to page 1
+      await fetchProducts(1, false);
       setAddStockModalOpen(false);
       setSelectedProduct(null);
       setQuantity(1);
@@ -189,8 +228,14 @@ const InventoryPage = () => {
       
       showSuccess(`Stock updated to ${newStock}`, 'Stock Adjusted');
       
-      // Refresh products
-      await fetchProducts();
+      // Update the product in the local state without refetching
+      setProducts(prevProducts => 
+        prevProducts.map(product => 
+          product.id === productId 
+            ? { ...product, stock: newStock }
+            : product
+        )
+      );
     } catch (error) {
       showError('Failed to update stock. Please try again.', 'Update Failed');
     }
@@ -210,13 +255,6 @@ const InventoryPage = () => {
     return `${stockValue} in stock`;
   };
 
-  // ✅ FIXED: Removed unused getCategoryName function
-  // const getCategoryName = (product) => {
-  //   if (product.category?.name) return product.category.name;
-  //   if (product.category) return product.category;
-  //   return 'Uncategorized';
-  // };
-
   const formatPrice = (price) => {
     if (!price) return '₦0.00';
     return new Intl.NumberFormat('en-NG', {
@@ -233,12 +271,22 @@ const InventoryPage = () => {
 
   const hasActiveFilters = searchTerm || categoryFilter || stockFilter;
 
-  // ✅ FIXED: Moved categories inside return statement to use it
   // Get unique categories for filter
   const categories = [...new Set(products
     .map(product => product.category?.name || product.category)
     .filter(Boolean)
   )];
+
+  // Handle scroll for infinite loading
+  const handleScroll = useCallback((e) => {
+    const target = e.target;
+    const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 100;
+    
+    if (bottom && !hasActiveFilters && !loading && !isLoadingMore && 
+        pagination.currentPage < pagination.totalPages) {
+      loadMoreProducts();
+    }
+  }, [hasActiveFilters, loading, isLoadingMore, pagination.currentPage, pagination.totalPages, loadMoreProducts]);
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -259,7 +307,7 @@ const InventoryPage = () => {
                 onSettingsClick={() => setSettingsOpen(true)} 
               />
               
-              <div className="product-list-container">
+              <div className="product-list-container" onScroll={handleScroll}>
                 <div className="product-list-header">
                   <div className="header-content">
                     <h1>Inventory Management</h1>
@@ -286,7 +334,6 @@ const InventoryPage = () => {
                   </div>
                   
                   <div className="filter-controls">
-                    {/* ✅ FIXED: Added category filter dropdown using categories array */}
                     <select 
                       className="filter-select"
                       value={categoryFilter}
@@ -307,8 +354,8 @@ const InventoryPage = () => {
                     >
                       <option value="">All Stock Levels</option>
                       <option value="out-of-stock">Out of Stock</option>
-                      <option value="low-stock">Low Stock</option>
-                      <option value="in-stock">In Stock</option>
+                      <option value="low-stock">Low Stock (1-9)</option>
+                      <option value="in-stock">In Stock (10+)</option>
                     </select>
 
                     {hasActiveFilters && (
@@ -348,7 +395,7 @@ const InventoryPage = () => {
                 )}
 
                 <div className="product-list-content">
-                  {loading ? (
+                  {loading && products.length === 0 ? (
                     <div className="loading-state">
                       <div className="loading-spinner"></div>
                       <p>Loading inventory...</p>
@@ -382,7 +429,7 @@ const InventoryPage = () => {
                             <th>Current Stock</th>
                             <th>Price</th>
                             <th>Stock Actions</th>
-                          </tr>
+                           </tr>
                         </thead>
                         <tbody>
                           {filteredProducts.map(product => (
@@ -399,27 +446,30 @@ const InventoryPage = () => {
                                   />
                                   <div className="product-details">
                                     <div className="product-name">{product.name || 'Unnamed Product'}</div>
+                                    {product.sku && (
+                                      <div className="product-sku">SKU: {product.sku}</div>
+                                    )}
                                   </div>
                                 </div>
-                              </td>
+                               </td>
                               <td>
                                 <span className="category-badge">
                                   {product.category?.name || product.category || 'Uncategorized'}
                                 </span>
-                              </td>
+                               </td>
                               <td>
                                 <span className={`stock-badge ${getStockBadge(product.stock)}`}>
                                   {getStockText(product.stock)}
                                 </span>
-                              </td>
+                               </td>
                               <td>
                                 <div className="price">{formatPrice(product.price)}</div>
-                              </td>
+                               </td>
                               <td>
                                 <div className="stock-actions">
                                   <button 
                                     className="stock-btn minus-btn"
-                                    onClick={() => handleQuickAdjust(product.id, -1 , product.stock)}
+                                    onClick={() => handleQuickAdjust(product.id, -1, product.stock)}
                                     title="Reduce stock by 1"
                                     disabled={parseInt(product.stock) <= 0}
                                   >
@@ -447,20 +497,46 @@ const InventoryPage = () => {
                                     Add More
                                   </button>
                                 </div>
-                              </td>
-                            </tr>
+                               </td>
+                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      
+                      {/* Loading more indicator */}
+                      {isLoadingMore && (
+                        <div className="loading-more">
+                          <div className="loading-spinner-small"></div>
+                          <p>Loading more products...</p>
+                        </div>
+                      )}
+                      
+                      {/* Pagination info */}
+                      {!hasActiveFilters && pagination.totalPages > 1 && (
+                        <div className="pagination-info">
+                          <span>
+                            Showing {products.length} of {pagination.totalCount} products
+                            {pagination.currentPage < pagination.totalPages && ' (scroll for more)'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
-                {!loading && filteredProducts.length > 0 && (
+                {!loading && filteredProducts.length > 0 && !hasActiveFilters && (
                   <div className="product-list-footer">
                     <div className="pagination-info">
-                      Showing {filteredProducts.length} of {products.length} products
-                      {hasActiveFilters && ' (filtered)'}
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                      {pagination.currentPage < pagination.totalPages && (
+                        <button 
+                          className="load-more-btn"
+                          onClick={loadMoreProducts}
+                          disabled={isLoadingMore}
+                        >
+                          {isLoadingMore ? 'Loading...' : 'Load More'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -522,6 +598,7 @@ const InventoryPage = () => {
                           <div className="product-name">{product.name}</div>
                           <div className="product-details">
                             <span className="current-stock">Current: {product.stock || 0}</span>
+                            {product.sku && <span className="product-sku">SKU: {product.sku}</span>}
                           </div>
                         </div>
                       </div>
@@ -546,6 +623,7 @@ const InventoryPage = () => {
                       <div className="product-name">{selectedProduct.name}</div>
                       <div className="product-meta">
                         <span>Current Stock: {selectedProduct.stock || 0}</span>
+                        {selectedProduct.sku && <span>SKU: {selectedProduct.sku}</span>}
                       </div>
                     </div>
                   </div>

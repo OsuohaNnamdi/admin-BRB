@@ -41,7 +41,97 @@ const ProductForm = () => {
   const fileInputRef = useRef(null);
   const additionalFilesInputRef = useRef(null);
 
-  // Fetch categories with useCallback
+  // Utility function to deduplicate arrays by id
+  const deduplicateById = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set();
+    return arr.filter(item => {
+      if (!item || !item.id) return false;
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  };
+
+  // Helper function to fetch all paginated data with deduplication
+  const fetchAllPaginatedData = async (fetchFunction) => {
+    let allData = [];
+    let currentPage = 1;
+    let totalPages = 1;
+    const seenIds = new Set();
+    
+    try {
+      const firstResponse = await fetchFunction(currentPage);
+      console.log('First page response:', firstResponse.data);
+      
+      // Handle paginated response
+      if (firstResponse.data && firstResponse.data.results && Array.isArray(firstResponse.data.results)) {
+        // Add unique items from first page
+        firstResponse.data.results.forEach(item => {
+          if (item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            allData.push(item);
+          }
+        });
+        
+        totalPages = firstResponse.data.total_pages || 1;
+        currentPage = firstResponse.data.current_page || 1;
+        
+        // Fetch remaining pages
+        if (totalPages > currentPage) {
+          const remainingPagesPromises = [];
+          for (let page = currentPage + 1; page <= totalPages; page++) {
+            remainingPagesPromises.push(fetchFunction(page));
+          }
+          
+          const remainingResponses = await Promise.all(remainingPagesPromises);
+          remainingResponses.forEach(res => {
+            if (res.data && res.data.results && Array.isArray(res.data.results)) {
+              res.data.results.forEach(item => {
+                if (item.id && !seenIds.has(item.id)) {
+                  seenIds.add(item.id);
+                  allData.push(item);
+                }
+              });
+            }
+          });
+        }
+      } else if (firstResponse.data && firstResponse.data.categories && Array.isArray(firstResponse.data.categories)) {
+        // Backward compatibility for non-paginated response with categories property
+        firstResponse.data.categories.forEach(item => {
+          if (item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            allData.push(item);
+          }
+        });
+      } else if (firstResponse.data && firstResponse.data.subcategories && Array.isArray(firstResponse.data.subcategories)) {
+        // Backward compatibility for non-paginated response with subcategories property
+        firstResponse.data.subcategories.forEach(item => {
+          if (item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            allData.push(item);
+          }
+        });
+      } else if (Array.isArray(firstResponse.data)) {
+        // If response.data is directly the array
+        firstResponse.data.forEach(item => {
+          if (item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            allData.push(item);
+          }
+        });
+      }
+      
+      console.log(`Fetched ${allData.length} unique items`);
+      return allData;
+      
+    } catch (error) {
+      console.error('Error fetching paginated data:', error);
+      throw error;
+    }
+  };
+
+  // Fetch categories with useCallback - UPDATED for pagination with deduplication
   const fetchCategories = useCallback(async () => {
     setLoadingCategories(true);
     let loadingAlertId = null;
@@ -50,11 +140,13 @@ const ProductForm = () => {
       // Show loading alert for categories
       loadingAlertId = showLoading('Loading categories...', 'Fetching Data');
       
-      const response = await ApiService.getAdminCategories();
-      console.log('Categories fetched:', response.data);
+      const categoriesData = await fetchAllPaginatedData(
+        (page) => ApiService.getAdminCategories(page)
+      );
       
-      const categoriesData = response.data.categories || response.data || [];
-      setCategories(categoriesData);
+      const uniqueCategories = deduplicateById(categoriesData);
+      console.log('Categories fetched (unique):', uniqueCategories.length);
+      setCategories(uniqueCategories);
       
       // Remove loading alert on success
       if (loadingAlertId) removeAlert(loadingAlertId);
@@ -102,24 +194,28 @@ const ProductForm = () => {
         ...prev,
         categories: 'Failed to load categories'
       }));
+      setCategories([]);
     } finally {
       setLoadingCategories(false);
     }
   }, [showLoading, removeAlert, showError]);
 
-  // Fetch subcategories
+  // Fetch subcategories - UPDATED for pagination with deduplication
   const fetchSubcategories = useCallback(async () => {
     setLoadingSubcategories(true);
     try {
-      const response = await ApiService.getAdminSubcategories();
-      console.log('Subcategories fetched:', response.data);
+      const subcategoriesData = await fetchAllPaginatedData(
+        (page) => ApiService.getAdminSubcategories(page)
+      );
       
-      const subcategoriesData = response.data.subcategories || response.data || [];
-      setSubcategories(subcategoriesData);
+      const uniqueSubcategories = deduplicateById(subcategoriesData);
+      console.log('Subcategories fetched (unique):', uniqueSubcategories.length);
+      setSubcategories(uniqueSubcategories);
       
     } catch (error) {
       console.error('Error fetching subcategories:', error);
       showError('Failed to load subcategories', 'Error', { duration: 4000 });
+      setSubcategories([]);
     } finally {
       setLoadingSubcategories(false);
     }
@@ -133,11 +229,16 @@ const ProductForm = () => {
 
   // Effect 1: Filter subcategories when categories change
   useEffect(() => {
+    // Ensure subcategories is an array before filtering
+    const subcategoriesArray = Array.isArray(subcategories) ? subcategories : [];
+    
     if (formData.category_ids.length > 0) {
-      const filtered = subcategories.filter(sub => 
-        formData.category_ids.includes(sub.category?.id)
+      const filtered = subcategoriesArray.filter(sub => 
+        sub && sub.category && formData.category_ids.includes(sub.category.id)
       );
-      setFilteredSubcategories(filtered);
+      // Deduplicate filtered subcategories as well
+      const uniqueFiltered = deduplicateById(filtered);
+      setFilteredSubcategories(uniqueFiltered);
     } else {
       setFilteredSubcategories([]);
     }
@@ -613,7 +714,7 @@ const ProductForm = () => {
                     <option disabled>Loading categories...</option>
                   ) : (
                     categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
+                      <option key={`cat-${cat.id}`} value={cat.id}>
                         {cat.name}
                       </option>
                     ))
@@ -651,7 +752,7 @@ const ProductForm = () => {
                     </option>
                   ) : (
                     filteredSubcategories.map(sub => (
-                      <option key={sub.id} value={sub.id}>
+                      <option key={`sub-${sub.id}`} value={sub.id}>
                         {sub.name} ({categories.find(c => c.id === sub.category?.id)?.name || sub.category?.name})
                       </option>
                     ))
@@ -949,7 +1050,7 @@ const ProductForm = () => {
                     </div>
                     <div className="add-product-other-images-grid">
                       {formData.detail_images.map((image, index) => (
-                        <div key={index} className="add-product-image-preview other-image">
+                        <div key={`detail-${index}-${Date.now()}`} className="add-product-image-preview other-image">
                           <img 
                             src={URL.createObjectURL(image)} 
                             alt={`Product detail ${index + 1}`} 

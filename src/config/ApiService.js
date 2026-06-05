@@ -44,8 +44,8 @@ class ApiService {
     return apiClient.put('/auth/profile/', profileData, {}, true);
   }
 
-  async getAdminProducts() {
-    return apiClient.get('/admin/products', {}, true);
+  async getAdminProducts(page = 1, pageSize = 10) {
+    return apiClient.get(`/admin/products/?page=${page}&page_size=${pageSize}`, {}, true);
   }
 
   async createProduct(productData) {
@@ -81,7 +81,7 @@ class ApiService {
 
 // Admin Categories Management
   async getAdminCategories() {
-    return apiClient.get('/admin/categories', {}, true);
+    return apiClient.get('/categories');
   }
 
   async createCategory(categoryData) {
@@ -98,7 +98,7 @@ class ApiService {
 
   // Admin Subcategories Management
   async getAdminSubcategories() {
-    return apiClient.get('/admin/subcategories', {}, true);
+    return apiClient.get('/subcategories');
   }
 
   async createSubcategory(subcategoryData) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/ProductModal.css';
 
 const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], subcategories = [] }) => {
@@ -6,17 +6,25 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
     name: '',
     slug: '',
     description: '',
+    ingredients: '',
+    how_to_use: '',
     price: '',
     stock: '',
     is_active: true,
-    category_ids: [], // Changed from category_id to category_ids (array)
-    subcategory_ids: [], // New field for subcategories
+    category_ids: [],
+    subcategory_ids: [],
     main_image: null,
     detail_images: []
   });
 
   const [availableSubcategories, setAvailableSubcategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [existingMainImage, setExistingMainImage] = useState(null);
+  const [existingDetailImages, setExistingDetailImages] = useState([]);
+  
+  const fileInputRef = useRef(null);
+  const additionalFilesInputRef = useRef(null);
 
   // Update available subcategories when selected categories change
   useEffect(() => {
@@ -80,6 +88,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
         name: product.name || '',
         slug: product.slug || '',
         description: product.description || '',
+        ingredients: product.ingredients || '',
+        how_to_use: product.how_to_use || '',
         price: product.price || '',
         stock: product.stock || '',
         is_active: product.is_active !== undefined ? product.is_active : true,
@@ -88,11 +98,17 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
         main_image: null,
         detail_images: []
       });
+      
+      // Store existing images for display
+      setExistingMainImage(product.main_image_url || null);
+      setExistingDetailImages(product.detail_images_urls || []);
     } else {
       setFormData({
         name: '',
         slug: '',
         description: '',
+        ingredients: '',
+        how_to_use: '',
         price: '',
         stock: '',
         is_active: true,
@@ -101,6 +117,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
         main_image: null,
         detail_images: []
       });
+      setExistingMainImage(null);
+      setExistingDetailImages([]);
     }
   }, [product, isOpen]);
 
@@ -146,40 +164,172 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
     }));
   };
 
+  // Image handling functions
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const files = Array.from(e.dataTransfer.files);
+      handleFiles(files, 'additional');
+    }
+  };
+
+  const handleMainImageDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const files = Array.from(e.dataTransfer.files);
+      handleFiles(files, 'main');
+    }
+  };
+
+  const handleFileSelect = (e, type = 'additional') => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      handleFiles(files, type);
+    }
+  };
+
+  const handleFiles = (files, type) => {
+    const imageFiles = files.filter(file => 
+      file.type.startsWith('image/') && 
+      ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)
+    );
+
+    if (imageFiles.length === 0) {
+      alert('Please select valid image files (JPEG, PNG, WebP, GIF)');
+      return;
+    }
+
+    if (type === 'main' && imageFiles.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        main_image: imageFiles[0]
+      }));
+      setExistingMainImage(null); // Clear existing main image when new one is selected
+    } else {
+      const newImages = [...formData.detail_images, ...imageFiles].slice(0, 10);
+      setFormData(prev => ({
+        ...prev,
+        detail_images: newImages
+      }));
+    }
+  };
+
+  const removeMainImage = () => {
+    setFormData(prev => ({ ...prev, main_image: null }));
+    setExistingMainImage(null);
+  };
+
+  const removeDetailImage = (index, isExisting = false, existingIndex = null) => {
+    if (isExisting) {
+      // Remove existing image from the server
+      const updatedExistingImages = [...existingDetailImages];
+      updatedExistingImages.splice(existingIndex, 1);
+      setExistingDetailImages(updatedExistingImages);
+    } else {
+      // Remove new image from form data
+      setFormData(prev => ({
+        ...prev,
+        detail_images: prev.detail_images.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const setAsMainImage = (image, index, isExisting = false, existingIndex = null) => {
+    if (isExisting) {
+      // Move existing image to main
+      const imageUrl = existingDetailImages[existingIndex];
+      const updatedExistingImages = [...existingDetailImages];
+      updatedExistingImages.splice(existingIndex, 1);
+      
+      setExistingMainImage(imageUrl);
+      setExistingDetailImages(updatedExistingImages);
+    } else {
+      // Move new image to main
+      const imageFile = formData.detail_images[index];
+      const newDetailImages = [...formData.detail_images];
+      newDetailImages.splice(index, 1);
+      
+      setFormData(prev => ({
+        ...prev,
+        main_image: imageFile,
+        detail_images: prev.main_image ? [prev.main_image, ...newDetailImages] : [...newDetailImages]
+      }));
+      setExistingMainImage(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // For PATCH updates, we only send what's needed
-      const submitData = {};
+      // Create FormData for file uploads
+      const submitData = new FormData();
 
       // Always include text fields if they have values
-      if (formData.name) submitData.name = formData.name;
-      if (formData.slug) submitData.slug = formData.slug;
-      if (formData.description) submitData.description = formData.description;
-      if (formData.price) submitData.price = parseFloat(formData.price);
-      if (formData.stock !== '') submitData.stock = parseInt(formData.stock);
-      submitData.is_active = formData.is_active;
+      if (formData.name) submitData.append('name', formData.name);
+      if (formData.slug) submitData.append('slug', formData.slug);
+      if (formData.description) submitData.append('description', formData.description);
+      if (formData.ingredients) submitData.append('ingredients', formData.ingredients);
+      if (formData.how_to_use) submitData.append('how_to_use', formData.how_to_use);
+      if (formData.price) submitData.append('price', parseFloat(formData.price));
+      if (formData.stock !== '') submitData.append('stock', parseInt(formData.stock));
+      submitData.append('is_active', formData.is_active);
 
       // Include category_ids array
-      if (formData.category_ids.length > 0) {
-        submitData.category_ids = formData.category_ids;
-      }
+      formData.category_ids.forEach(id => {
+        submitData.append('category_ids', id);
+      });
 
       // Include subcategory_ids array
-      if (formData.subcategory_ids.length > 0) {
-        submitData.subcategory_ids = formData.subcategory_ids;
+      formData.subcategory_ids.forEach(id => {
+        submitData.append('subcategory_ids', id);
+      });
+
+      // Handle main image - only if a new one was selected
+      if (formData.main_image instanceof File) {
+        submitData.append('main_image', formData.main_image);
       }
 
-      // For image updates, we would need a separate API call
-      // This modal focuses on basic info updates as per PATCH requirements
+      // Handle detail images - only new ones
+      formData.detail_images.forEach((image) => {
+        if (image instanceof File) {
+          submitData.append('detail_images', image);
+        }
+      });
+
+      // Note: For existing images that need to be deleted, you would need to implement 
+      // a separate API call or include image IDs to delete
+      // For now, we're only sending new images
 
       await onSubmit(submitData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGenerateSlug = () => {
+    if (formData.name) {
+      const slug = generateSlug(formData.name);
+      setFormData(prev => ({ ...prev, slug }));
     }
   };
 
@@ -210,15 +360,25 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
 
             <div className="form-group">
               <label className="form-label required">Slug</label>
-              <input
-                type="text"
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                className="form-input"
-                required
-                disabled={isSubmitting}
-              />
+              <div className="slug-input-group">
+                <input
+                  type="text"
+                  name="slug"
+                  value={formData.slug}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  required
+                  disabled={isSubmitting}
+                />
+                <button 
+                  type="button" 
+                  className="generate-slug-btn"
+                  onClick={handleGenerateSlug}
+                  disabled={!formData.name || isSubmitting}
+                >
+                  Generate
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
@@ -305,15 +465,197 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description</label>
+            <label className="form-label required">Description</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
               rows="4"
               className="form-textarea"
+              required
               disabled={isSubmitting}
+              placeholder="Describe your product features, benefits, and specifications..."
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label required">Ingredients</label>
+            <textarea
+              name="ingredients"
+              value={formData.ingredients}
+              onChange={handleInputChange}
+              rows="3"
+              className="form-textarea"
+              required
+              disabled={isSubmitting}
+              placeholder="List all ingredients separated by commas or new lines. Example: Water, Glycerin, Vitamin C..."
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label required">How to Use</label>
+            <textarea
+              name="how_to_use"
+              value={formData.how_to_use}
+              onChange={handleInputChange}
+              rows="3"
+              className="form-textarea"
+              required
+              disabled={isSubmitting}
+              placeholder="Provide step-by-step instructions on how to use this product..."
+            />
+          </div>
+
+          {/* Image Upload Section */}
+          <div className="form-group">
+            <label className="form-label">Product Images</label>
+            
+            {/* Main Image */}
+            <div className="image-section">
+              <label className="image-section-label">Main Image</label>
+              {(existingMainImage || formData.main_image) ? (
+                <div className="image-preview main-image-preview">
+                  <img 
+                    src={formData.main_image ? URL.createObjectURL(formData.main_image) : existingMainImage} 
+                    alt="Main product" 
+                  />
+                  <div className="image-actions">
+                    <button 
+                      type="button" 
+                      className="image-remove-btn"
+                      onClick={removeMainImage}
+                      disabled={isSubmitting}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className={`drop-zone ${dragActive ? 'drag-active' : ''}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleMainImageDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="drop-zone-content">
+                    <div className="drop-zone-icon">📸</div>
+                    <p>Drag & drop your main image here</p>
+                    <p className="drop-zone-subtext">or</p>
+                    <button type="button" className="browse-btn">Browse Files</button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={(e) => handleFileSelect(e, 'main')}
+                      hidden
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Detail Images */}
+            <div className="image-section">
+              <label className="image-section-label">Detail Images (Up to 10)</label>
+              
+              <div 
+                className={`drop-zone ${dragActive ? 'drag-active' : ''}`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => additionalFilesInputRef.current?.click()}
+              >
+                <div className="drop-zone-content">
+                  <div className="drop-zone-icon">🖼️</div>
+                  <p>Drag & drop detail images here</p>
+                  <p className="drop-zone-subtext">or</p>
+                  <button type="button" className="browse-btn">Browse Files</button>
+                  <input
+                    ref={additionalFilesInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    multiple
+                    onChange={(e) => handleFileSelect(e, 'additional')}
+                    hidden
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              {/* Display existing detail images */}
+              {existingDetailImages.length > 0 && (
+                <div className="detail-images-grid">
+                  <label className="image-subsection-label">Existing Images</label>
+                  <div className="images-grid">
+                    {existingDetailImages.map((image, idx) => (
+                      <div key={`existing-${idx}`} className="image-preview detail-image-preview">
+                        <img src={image} alt={`Detail ${idx + 1}`} />
+                        <div className="image-actions">
+                          <button 
+                            type="button" 
+                            className="image-set-main-btn"
+                            onClick={() => setAsMainImage(image, idx, true, idx)}
+                            disabled={isSubmitting}
+                            title="Set as main image"
+                          >
+                            Set as Main
+                          </button>
+                          <button 
+                            type="button" 
+                            className="image-remove-btn"
+                            onClick={() => removeDetailImage(idx, true, idx)}
+                            disabled={isSubmitting}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Display new detail images */}
+              {formData.detail_images.length > 0 && (
+                <div className="detail-images-grid">
+                  <label className="image-subsection-label">New Images</label>
+                  <div className="images-grid">
+                    {formData.detail_images.map((image, idx) => (
+                      <div key={`new-${idx}`} className="image-preview detail-image-preview">
+                        <img src={URL.createObjectURL(image)} alt={`New detail ${idx + 1}`} />
+                        <div className="image-actions">
+                          <button 
+                            type="button" 
+                            className="image-set-main-btn"
+                            onClick={() => setAsMainImage(image, idx, false)}
+                            disabled={isSubmitting}
+                            title="Set as main image"
+                          >
+                            Set as Main
+                          </button>
+                          <button 
+                            type="button" 
+                            className="image-remove-btn"
+                            onClick={() => removeDetailImage(idx, false)}
+                            disabled={isSubmitting}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <small className="helper-text">
+                Supported formats: JPEG, PNG, WebP, GIF. Max file size: 5MB per image.
+              </small>
+            </div>
           </div>
 
           <div className="form-group">
@@ -325,6 +667,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
                 onChange={handleInputChange}
                 disabled={isSubmitting}
               />
+              <span className="checkmark"></span>
               <span>Active Product</span>
             </label>
           </div>

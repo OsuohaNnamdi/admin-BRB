@@ -23,6 +23,13 @@ const ProductList = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [subcategoryFilter, setSubcategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
   const { showSuccess, showError, showLoading, removeAlert } = useAlert();
 
   const toggleSidebar = () => {
@@ -33,17 +40,45 @@ const ProductList = () => {
     setSidebarOpen(false);
   };
 
-  // API functions wrapped with useCallback
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  // Fetch a single page of products
+  const fetchProductsPage = useCallback(async (page = 1, append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
-      const response = await ApiService.getAdminProducts();
-      console.log('Products fetched:', response.data);
+      const response = await ApiService.getAdminProducts(page, 20); // 20 items per page
+      const responseData = response.data;
       
-      // Transform API response to match component structure
-      const productsData = response.data.products || response.data || [];
-      setProducts(productsData);
+      console.log(`Fetched page ${page}:`, responseData);
       
+      // Handle paginated response
+      if (responseData.results && Array.isArray(responseData.results)) {
+        const newProducts = responseData.results;
+        
+        if (append) {
+          setProducts(prevProducts => [...prevProducts, ...newProducts]);
+        } else {
+          setProducts(newProducts);
+        }
+        
+        setTotalPages(responseData.total_pages || 1);
+        setTotalProducts(responseData.count || 0);
+        setCurrentPage(responseData.current_page || page);
+        
+        return newProducts;
+      } else if (Array.isArray(responseData)) {
+        if (append) {
+          setProducts(prevProducts => [...prevProducts, ...responseData]);
+        } else {
+          setProducts(responseData);
+        }
+        return responseData;
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching products:', error);
       showError(
@@ -51,24 +86,39 @@ const ProductList = () => {
         'Load Error',
         { duration: 5000 }
       );
-      
-      // Set empty array as fallback
-      setProducts([]);
+      if (!append) {
+        setProducts([]);
+      }
+      return [];
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
   }, [showError]);
 
+  // Load next page
+  const loadMoreProducts = useCallback(async () => {
+    if (currentPage < totalPages && !isLoadingMore && !loading) {
+      await fetchProductsPage(currentPage + 1, true);
+    }
+  }, [currentPage, totalPages, isLoadingMore, loading, fetchProductsPage]);
+
+  // Fetch all categories (they usually have fewer items)
   const fetchCategories = useCallback(async () => {
     setCategoriesLoading(true);
     try {
-      const response = await ApiService.getAdminCategories();
-      console.log('Categories fetched:', response.data);
+      const response = await ApiService.getAdminCategories(1, 100);
+      const responseData = response.data;
       
-      // Transform API response to match component structure
-      const categoriesData = response.data.categories || response.data || [];
+      let categoriesData = [];
+      if (responseData.results && Array.isArray(responseData.results)) {
+        categoriesData = responseData.results;
+      } else if (Array.isArray(responseData)) {
+        categoriesData = responseData;
+      }
+      
+      console.log('Categories fetched:', categoriesData.length);
       setCategories(categoriesData);
-      
     } catch (error) {
       console.error('Error fetching categories:', error);
       showError(
@@ -76,23 +126,28 @@ const ProductList = () => {
         'Categories Load Error',
         { duration: 4000 }
       );
-      
-      // Set empty array as fallback
       setCategories([]);
     } finally {
       setCategoriesLoading(false);
     }
   }, [showError]);
 
+  // Fetch all subcategories
   const fetchSubcategories = useCallback(async () => {
     setSubcategoriesLoading(true);
     try {
-      const response = await ApiService.getAdminSubcategories();
-      console.log('Subcategories fetched:', response.data);
+      const response = await ApiService.getAdminSubcategories(1, 100);
+      const responseData = response.data;
       
-      const subcategoriesData = response.data.subcategories || response.data || [];
+      let subcategoriesData = [];
+      if (responseData.results && Array.isArray(responseData.results)) {
+        subcategoriesData = responseData.results;
+      } else if (Array.isArray(responseData)) {
+        subcategoriesData = responseData;
+      }
+      
+      console.log('Subcategories fetched:', subcategoriesData.length);
       setSubcategories(subcategoriesData);
-      
     } catch (error) {
       console.error('Error fetching subcategories:', error);
       showError(
@@ -120,10 +175,8 @@ const ProductList = () => {
   // Update product with PATCH method (partial updates only)
   const updateProduct = async (id, productData) => {
     try {
-      // Prepare only the fields that need updating (partial update)
       const updateData = {};
       
-      // Only include fields that have changed or are provided
       if (productData.name !== undefined) updateData.name = productData.name;
       if (productData.slug !== undefined) updateData.slug = productData.slug;
       if (productData.description !== undefined) updateData.description = productData.description;
@@ -133,12 +186,10 @@ const ProductList = () => {
       if (productData.ingredients !== undefined) updateData.ingredients = productData.ingredients;
       if (productData.how_to_use !== undefined) updateData.how_to_use = productData.how_to_use;
       
-      // Handle category_ids as array
       if (productData.category_ids !== undefined) {
         updateData.category_ids = productData.category_ids;
       }
       
-      // Handle subcategory_ids as array
       if (productData.subcategory_ids !== undefined) {
         updateData.subcategory_ids = productData.subcategory_ids;
       }
@@ -164,19 +215,29 @@ const ProductList = () => {
     }
   };
 
+  // Initial load
   useEffect(() => {
-    fetchProducts();
+    fetchProductsPage(1, false);
     fetchCategories();
     fetchSubcategories();
-  }, [fetchProducts, fetchCategories, fetchSubcategories]);
+  }, []);
 
   const handleEdit = (product) => {
-    // Transform product data for the modal - FIXED: Extract IDs from the categories and subcategories arrays
     const productForEdit = {
-      ...product,
-      // Extract category_ids from the categories array
+      id: product.id,
+      name: product.name || '',
+      slug: product.slug || '',
+      description: product.description || '',
+      ingredients: product.ingredients || '',
+      how_to_use: product.how_to_use || '',
+      price: product.price || '',
+      stock: product.stock || '',
+      is_active: product.is_active === true,
+      main_image: null,
+      main_image_url: product.main_image_url || '',
+      detail_images: [],
+      detail_images_urls: product.detail_images_urls || [],
       category_ids: product.categories ? product.categories.map(cat => cat.id) : [],
-      // Extract subcategory_ids from the subcategories array
       subcategory_ids: product.subcategories ? product.subcategories.map(sub => sub.id) : []
     };
     console.log('Product for edit:', productForEdit);
@@ -194,25 +255,22 @@ const ProductList = () => {
     setModalOpen(true);
   };
 
-  // Handle modal submit with partial updates
   const handleModalSubmit = async (productData) => {
     try {
       let loadingAlertId = showLoading('Saving product...', 'Processing');
       
       if (selectedProduct) {
-        // Update existing product using PATCH (partial update)
         await updateProduct(selectedProduct.id, productData);
         removeAlert(loadingAlertId);
         showSuccess('Product updated successfully!', 'Update Successful');
       } else {
-        // Create new product - use POST with full data
         await createProduct(productData);
         removeAlert(loadingAlertId);
         showSuccess('Product created successfully!', 'Create Successful');
       }
       
-      // Refresh products list
-      await fetchProducts();
+      // Refresh products list - reset to page 1
+      await fetchProductsPage(1, false);
       
       setModalOpen(false);
       setSelectedProduct(null);
@@ -220,12 +278,10 @@ const ProductList = () => {
     } catch (error) {
       console.error('Error saving product:', error);
           
-      // Handle different error scenarios
       if (error.response?.data) {
         const backendErrors = error.response.data;
         let errorMessage = 'Failed to save product. ';
         
-        // Format backend errors
         Object.keys(backendErrors).forEach(key => {
           if (Array.isArray(backendErrors[key])) {
             errorMessage += `${key}: ${backendErrors[key].join(', ')} `;
@@ -260,8 +316,7 @@ const ProductList = () => {
         removeAlert(loadingAlertId);
         showSuccess('Product deleted successfully!', 'Delete Successful');
         
-        // Refresh products list
-        await fetchProducts();
+        await fetchProductsPage(1, false);
         
         setDeleteModalOpen(false);
         setSelectedProduct(null);
@@ -269,7 +324,6 @@ const ProductList = () => {
       } catch (error) {
         console.error('Error deleting product:', error);
         
-        // Handle different error scenarios
         if (error.response?.data?.error) {
           showError(error.response.data.error, 'Delete Failed', { duration: 5000 });
         } else if (error.response?.status === 400) {
@@ -289,12 +343,10 @@ const ProductList = () => {
     }
   };
 
-  // Get subcategories for a specific category
   const getSubcategoriesForCategory = (categoryId) => {
     return subcategories.filter(sub => sub.category?.id === categoryId);
   };
 
-  // Filter products based on search term and filters - FIXED: Check against categories and subcategories arrays
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -314,10 +366,6 @@ const ProductList = () => {
 
     return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
   });
-
-  const getStatusBadge = (status) => {
-    return status === true ? 'active' : 'inactive';
-  };
 
   const getStockBadge = (stock) => {
     if (stock === 0 || stock === '0') return 'out-of-stock';
@@ -339,11 +387,6 @@ const ProductList = () => {
     return `${stock} in stock`;
   };
 
-  const getStatusText = (status) => {
-    return status === true ? 'Active' : 'Inactive';
-  };
-
-  // FIXED: Get category names from the categories array
   const getCategoryNames = (product) => {
     if (product.categories && product.categories.length > 0) {
       return product.categories.map(cat => cat.name).join(', ');
@@ -351,7 +394,6 @@ const ProductList = () => {
     return 'Uncategorized';
   };
 
-  // FIXED: Get subcategory names from the subcategories array
   const getSubcategoryNames = (product) => {
     if (product.subcategories && product.subcategories.length > 0) {
       return product.subcategories.map(sub => sub.name).join(', ');
@@ -362,7 +404,7 @@ const ProductList = () => {
   const handleCategoryFilterChange = (e) => {
     const value = e.target.value;
     setCategoryFilter(value);
-    setSubcategoryFilter(''); // Clear subcategory filter when category changes
+    setSubcategoryFilter('');
   };
 
   const handleSubcategoryFilterChange = (e) => {
@@ -382,10 +424,34 @@ const ProductList = () => {
 
   const hasActiveFilters = searchTerm || categoryFilter || subcategoryFilter || statusFilter;
 
-  // Get subcategories for current category filter
   const subcategoriesForFilter = categoryFilter 
     ? getSubcategoriesForCategory(parseInt(categoryFilter))
     : [];
+
+  const goToPage = async (page) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      await fetchProductsPage(page, false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
+  };
 
   return (
     <div className="__variable_9eb1a5 body">
@@ -558,107 +624,156 @@ const ProductList = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="products-table-container">
-                      <table className="products-table">
-                        <thead>
-                          <tr>
-                            <th>Product</th>
-                            <th>Categories</th>
-                            <th>Subcategories</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredProducts.map(product => {
-                            const categoryNames = getCategoryNames(product);
-                            const subcategoryNames = getSubcategoryNames(product);
-                            
-                            return (
-                              <tr key={product.id}>
-                                <td>
-                                  <div className="product-info">
-                                    <img 
-                                      src={product.main_image_url} 
-                                      alt={product.name}
-                                      className="product-image"
-                                      onError={(e) => {
-                                        e.target.src = 'https://via.placeholder.com/60x60';
-                                      }}
-                                    />
-                                    <div className="product-details">
-                                      <div className="product-name">{product.name || 'Unnamed Product'}</div>
-                                      <div className="product-slug">/{product.slug || 'no-slug'}</div>
+                    <>
+                      <div className="products-table-container">
+                        <table className="products-table">
+                          <thead>
+                            <tr>
+                              <th>Product</th>
+                              <th>Categories</th>
+                              <th>Subcategories</th>
+                              <th>Price</th>
+                              <th>Stock</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredProducts.map(product => {
+                              const categoryNames = getCategoryNames(product);
+                              const subcategoryNames = getSubcategoryNames(product);
+                              
+                              return (
+                                <tr key={product.id}>
+                                  <td>
+                                    <div className="product-info">
+                                      <img 
+                                        src={product.main_image_url || 'https://via.placeholder.com/60x60'} 
+                                        alt={product.name}
+                                        className="product-image"
+                                        onError={(e) => {
+                                          e.target.src = 'https://via.placeholder.com/60x60';
+                                        }}
+                                      />
+                                      <div className="product-details">
+                                        <div className="product-name">{product.name || 'Unnamed Product'}</div>
+                                        <div className="product-slug">/{product.slug || 'no-slug'}</div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td>
-                                  <span className="category-badge">
-                                    {categoryNames}
-                                  </span>
-                                </td>
-                                <td>
-                                  {subcategoryNames ? (
-                                    <span className="subcategory-badge">
-                                      {subcategoryNames}
+                                   </td>
+                                  <td>
+                                    <span className="category-badge">
+                                      {categoryNames}
                                     </span>
-                                  ) : (
-                                    <span className="no-subcategory">—</span>
-                                  )}
-                                </td>
-                                <td>
-                                  <div className="price">{formatPrice(product.price)}</div>
-                                </td>
-                                <td>
-                                  <span className={`stock-badge ${getStockBadge(product.stock)}`}>
-                                    {getStockText(product.stock)}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span className={`status-badge ${getStatusBadge(product.is_active)}`}>
-                                    {getStatusText(product.is_active)}
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className="action-buttons">
-                                    <button 
-                                      className="action-btn edit-btn"
-                                      onClick={() => handleEdit(product)}
-                                      title="Edit product"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button 
-                                      className="action-btn delete-btn"
-                                      onClick={() => handleDelete(product)}
-                                      title="Delete product"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                   </td>
+                                  <td>
+                                    {subcategoryNames ? (
+                                      <span className="subcategory-badge">
+                                        {subcategoryNames}
+                                      </span>
+                                    ) : (
+                                      <span className="no-subcategory">—</span>
+                                    )}
+                                   </td>
+                                  <td>
+                                    <div className="price">{formatPrice(product.price)}</div>
+                                   </td>
+                                  <td>
+                                    <span className={`stock-badge ${getStockBadge(product.stock)}`}>
+                                      {getStockText(product.stock)}
+                                    </span>
+                                   </td>
+                                  <td>
+                                    <div className="action-buttons">
+                                      <button 
+                                        className="action-btn edit-btn"
+                                        onClick={() => handleEdit(product)}
+                                        title="Edit product"
+                                      >
+                                        ✏️
+                                      </button>
+                                      <button 
+                                        className="action-btn delete-btn"
+                                        onClick={() => handleDelete(product)}
+                                        title="Delete product"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
+                                   </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {/* Load More Button (Alternative to pagination) */}
+                      {currentPage < totalPages && !hasActiveFilters && (
+                        <div className="load-more-container" style={{ textAlign: 'center', padding: '20px' }}>
+                          <button 
+                            className="load-more-btn"
+                            onClick={loadMoreProducts}
+                            disabled={isLoadingMore}
+                            style={{
+                              padding: '10px 20px',
+                              backgroundColor: '#4CAF50',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: isLoadingMore ? 'not-allowed' : 'pointer',
+                              opacity: isLoadingMore ? 0.6 : 1
+                            }}
+                          >
+                            {isLoadingMore ? 'Loading...' : `Load More Products (${products.length} / ${totalProducts})`}
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Loading more indicator */}
+                      {isLoadingMore && (
+                        <div className="loading-more-indicator" style={{ textAlign: 'center', padding: '20px' }}>
+                          <div className="loading-spinner-small"></div>
+                          <p>Loading more products...</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
-                {!loading && filteredProducts.length > 0 && (
+                {!loading && filteredProducts.length > 0 && !hasActiveFilters && totalPages > 1 && (
                   <div className="product-list-footer">
                     <div className="pagination-info">
-                      Showing {filteredProducts.length} of {products.length} products
-                      {hasActiveFilters && ' (filtered)'}
+                      <span>
+                        Page {currentPage} of {totalPages} | Showing {products.length} of {totalProducts} products
+                      </span>
                     </div>
                     <div className="pagination-controls">
-                      <button className="pagination-btn" disabled>Previous</button>
-                      <button className="pagination-btn active">1</button>
-                      <button className="pagination-btn">2</button>
-                      <button className="pagination-btn">Next</button>
+                      <button 
+                        className="pagination-btn"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1 || isLoadingMore}
+                      >
+                        Previous
+                      </button>
+                      
+                      {getPageNumbers().map(pageNum => (
+                        <button 
+                          key={pageNum}
+                          className={`pagination-btn ${pageNum === currentPage ? 'active' : ''}`}
+                          onClick={() => goToPage(pageNum)}
+                          disabled={isLoadingMore}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                      
+                      <button 
+                        className="pagination-btn"
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage === totalPages || isLoadingMore}
+                      >
+                        Next
+                      </button>
                     </div>
                   </div>
                 )}
@@ -670,7 +785,6 @@ const ProductList = () => {
       
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       
-      {/* Product Modal */}
       <ProductModal
         isOpen={modalOpen}
         onClose={() => {
@@ -683,7 +797,6 @@ const ProductList = () => {
         subcategories={subcategories}
       />
       
-      {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
         <div className="modal-overlay">
           <div className="delete-modal">
