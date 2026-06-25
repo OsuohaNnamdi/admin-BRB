@@ -45,7 +45,7 @@ const ProfilePage = () => {
       });
       
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      // console.error('Error fetching profile:', error);
       showError(
         'Failed to load profile. Please try again.',
         'Load Error',
@@ -77,7 +77,7 @@ const ProfilePage = () => {
       const response = await ApiService.updateProfile(updateData);
       return response.data;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      // console.error('Error updating profile:', error);
       throw error;
     }
   };
@@ -159,7 +159,7 @@ const ProfilePage = () => {
       }
       
     } catch (error) {
-      console.error('Error updating profile:', error);
+      // console.error('Error updating profile:', error);
       
       if (error.response?.data) {
         const backendErrors = error.response.data;

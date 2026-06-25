@@ -32,7 +32,7 @@ const SingleOrder = () => {
       const addressId = selectedOrder?.address;
       
       if (!addressId || !selectedOrder) {
-        console.log('No address ID found in order');
+        // console.log('No address ID found in order');
         return;
       }
       
@@ -40,9 +40,9 @@ const SingleOrder = () => {
       try {
         const response = await ApiService.getUserAddress(addressId);
         setAddressData(response.data);
-        console.log('Address fetched successfully:', response.data);
+        // console.log('Address fetched successfully:', response.data);
       } catch (error) {
-        console.error('Error fetching address:', error);
+        // console.error('Error fetching address:', error);
       } finally {
         setLoadingAddress(false);
       }
@@ -81,7 +81,7 @@ const SingleOrder = () => {
       removeAlert(loadingAlertId);
       showSuccess('Order status updated successfully!', 'Update Successful');
     } catch (error) {
-      console.error('Error updating order status:', error);
+      // console.error('Error updating order status:', error);
       handleUpdateError(error);
     } finally {
       setUpdating(false);

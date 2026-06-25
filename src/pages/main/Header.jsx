@@ -39,7 +39,7 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
         const response = await ApiService.getProfile();
         setUserProfile(response.data);
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        // console.error('Error fetching user profile:', error);
       }
     };
 
@@ -127,7 +127,7 @@ const Header = ({ onToggleSidebar, onSettingsClick }) => {
       }, 1500);
       
     } catch (error) {
-      console.error('Logout failed:', error);
+      // console.error('Logout failed:', error);
       removeAlert(loadingAlertId);
       await ApiService.removeToken();
       

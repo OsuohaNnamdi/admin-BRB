@@ -86,7 +86,7 @@ const SendCouponModal = ({ isOpen, onClose, onSubmit, coupons, selectedCoupon })
       const emails = formData.emails.split(/[\n,]/).map(email => email.trim()).filter(email => email);
       await onSubmit(formData.coupon_id, emails);
     } catch (error) {
-      console.error('Submit error:', error);
+      // console.error('Submit error:', error);
     } finally {
       setIsSubmitting(false);
     }

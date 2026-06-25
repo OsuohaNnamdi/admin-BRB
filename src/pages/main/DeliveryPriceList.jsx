@@ -41,7 +41,7 @@ const DeliveryPriceList = () => {
       loadingAlertId = showLoading('Loading delivery prices...', 'Fetching Data');
       
       const response = await ApiService.getAdminDeliveryPrices();
-      console.log('Delivery prices fetched:', response.data);
+      // // console.log('Delivery prices fetched:', response.data);
       
       const pricesData = response.data.delivery_prices || response.data || [];
       setPrices(pricesData);
@@ -49,7 +49,7 @@ const DeliveryPriceList = () => {
       if (loadingAlertId) removeAlert(loadingAlertId);
       
     } catch (error) {
-      console.error('Error fetching delivery prices:', error);
+      // console.error('Error fetching delivery prices:', error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       
@@ -125,7 +125,7 @@ const DeliveryPriceList = () => {
       setSelectedPrice(null);
       
     } catch (error) {
-      console.error('Error saving delivery price:', error);
+      // console.error('Error saving delivery price:', error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       
@@ -163,7 +163,7 @@ const DeliveryPriceList = () => {
         setSelectedPrice(null);
         
       } catch (error) {
-        console.error('Error deleting delivery price:', error);
+        // console.error('Error deleting delivery price:', error);
         
         if (loadingAlertId) removeAlert(loadingAlertId);
         

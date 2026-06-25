@@ -320,7 +320,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, product, categories = [], sub
 
       await onSubmit(submitData);
     } catch (error) {
-      console.error('Error:', error);
+      // console.error('Error:', error);
     } finally {
       setIsSubmitting(false);
     }

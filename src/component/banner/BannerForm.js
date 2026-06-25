@@ -33,7 +33,7 @@ const BannerForm = () => {
         imagePreview: banner.image_url || ''
       });
     } catch (error) {
-      console.error('Error fetching banner:', error);
+      // console.error('Error fetching banner:', error);
       showError('Failed to load banner details.', 'Load Error');
       navigate('/admin/banners');
     } finally {
@@ -177,7 +177,7 @@ const BannerForm = () => {
 
       navigate('/admin/banners');
     } catch (error) {
-      console.error('Error saving banner:', error);
+      // console.error('Error saving banner:', error);
 
       if (error.response?.data) {
         const backendErrors = error.response.data;

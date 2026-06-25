@@ -49,7 +49,7 @@ const ReviewList = () => {
       });
 
       const response = await ApiService.getAdminReviews(params);
-      console.log('Reviews fetched:', response.data);
+      // // console.log('Reviews fetched:', response.data);
       
       const reviewsData = response.data.results || [];
       setReviews(reviewsData);
@@ -58,7 +58,7 @@ const ReviewList = () => {
       setCurrentPage(response.data.current_page || page);
       
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      // console.error('Error fetching reviews:', error);
       showError(
         'Failed to load reviews. Please try again.',
         'Load Error',
@@ -75,9 +75,9 @@ const ReviewList = () => {
   const deleteReview = async (id) => {
     try {
       await ApiService.deleteReview(id);
-      console.log('Review deleted:', id);
+      // // console.log('Review deleted:', id);
     } catch (error) {
-      console.error('Error deleting review:', error);
+      // console.error('Error deleting review:', error);
       throw error;
     }
   };
@@ -107,7 +107,7 @@ const ReviewList = () => {
         setSelectedReview(null);
         
       } catch (error) {
-        console.error('Error deleting review:', error);
+        // console.error('Error deleting review:', error);
         
         // Handle different error scenarios
         if (error.response?.data?.error) {

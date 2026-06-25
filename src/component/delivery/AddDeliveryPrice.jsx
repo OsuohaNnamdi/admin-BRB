@@ -41,7 +41,7 @@ const AddDeliveryPrice = () => {
       navigate('/admin/delivery-prices');
       
     } catch (error) {
-      console.error('Error creating delivery price:', error);
+      // console.error('Error creating delivery price:', error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       

@@ -134,7 +134,7 @@ const CouponModal = ({ isOpen, onClose, onSubmit, coupon }) => {
       
       await onSubmit(submitData);
     } catch (error) {
-      console.error('Submit error:', error);
+      // console.error('Submit error:', error);
     } finally {
       setIsSubmitting(false);
     }

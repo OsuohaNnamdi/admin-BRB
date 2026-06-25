@@ -24,7 +24,7 @@ const CategoryForm = ({ initialData = null, onSuccess, onCancel, mode = 'categor
       const categoriesData = response.data.categories || response.data || [];
       setCategories(categoriesData);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // console.error('Error fetching categories:', error);
       showError('Failed to load categories', 'Error', { duration: 4000 });
     } finally {
       setLoadingCategories(false);
@@ -159,7 +159,7 @@ const CategoryForm = ({ initialData = null, onSuccess, onCancel, mode = 'categor
       }
 
     } catch (error) {
-      console.error(`Error saving ${mode}:`, error);
+      // console.error(`Error saving ${mode}:`, error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       

@@ -62,7 +62,6 @@ const ProductForm = () => {
     
     try {
       const firstResponse = await fetchFunction(currentPage);
-      console.log('First page response:', firstResponse.data);
       
       // Handle paginated response
       if (firstResponse.data && firstResponse.data.results && Array.isArray(firstResponse.data.results)) {
@@ -122,11 +121,10 @@ const ProductForm = () => {
         });
       }
       
-      console.log(`Fetched ${allData.length} unique items`);
       return allData;
       
     } catch (error) {
-      console.error('Error fetching paginated data:', error);
+      // console.error('Error fetching paginated data:', error);
       throw error;
     }
   };
@@ -145,14 +143,14 @@ const ProductForm = () => {
       );
       
       const uniqueCategories = deduplicateById(categoriesData);
-      console.log('Categories fetched (unique):', uniqueCategories.length);
+      
       setCategories(uniqueCategories);
       
       // Remove loading alert on success
       if (loadingAlertId) removeAlert(loadingAlertId);
       
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // console.error('Error fetching categories:', error);
       
       // Remove loading alert on error
       if (loadingAlertId) removeAlert(loadingAlertId);
@@ -209,11 +207,10 @@ const ProductForm = () => {
       );
       
       const uniqueSubcategories = deduplicateById(subcategoriesData);
-      console.log('Subcategories fetched (unique):', uniqueSubcategories.length);
       setSubcategories(uniqueSubcategories);
       
     } catch (error) {
-      console.error('Error fetching subcategories:', error);
+      // console.error('Error fetching subcategories:', error);
       showError('Failed to load subcategories', 'Error', { duration: 4000 });
       setSubcategories([]);
     } finally {
@@ -549,13 +546,8 @@ const ProductForm = () => {
         }
       });
 
-      console.log('Submitting product data...');
-      console.log('Category IDs:', formData.category_ids);
-      console.log('Subcategory IDs:', formData.subcategory_ids);
+      await ApiService.createProduct(submitData);
       
-      const response = await ApiService.createProduct(submitData);
-      
-      console.log('Product created successfully:', response.data);
       
       // Remove loading alert and show success
       if (loadingAlertId) removeAlert(loadingAlertId);
@@ -578,7 +570,7 @@ const ProductForm = () => {
       });
       
     } catch (error) {
-      console.error('Error creating product:', error);
+      // console.error('Error creating product:', error);
       
       // Remove loading alert on error
       if (loadingAlertId) removeAlert(loadingAlertId);

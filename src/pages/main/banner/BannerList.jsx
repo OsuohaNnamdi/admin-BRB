@@ -34,14 +34,14 @@ const BannerList = () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminBanners();
-      console.log('Banners fetched:', response.data);
+      // console.log('Banners fetched:', response.data);
       
       // Transform API response to match component structure
       const bannersData = response.data || [];
       setBanners(bannersData);
       
     } catch (error) {
-      console.error('Error fetching banners:', error);
+      // console.error('Error fetching banners:', error);
       showError(
         'Failed to load banners. Please try again.',
         'Load Error',
@@ -68,10 +68,10 @@ const BannerList = () => {
       }
       
       const response = await ApiService.createBanner(formData);
-      console.log('Banner created:', response.data);
+      // console.log('Banner created:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error creating banner:', error);
+      // console.error('Error creating banner:', error);
       throw error;
     }
   };
@@ -86,7 +86,7 @@ const BannerList = () => {
         formData.append('image', bannerData.image);
         
         const response = await ApiService.updateBanner(id, formData, true); // true for FormData
-        console.log('Banner updated with image:', response.data);
+        // console.log('Banner updated with image:', response.data);
         return response.data;
       } else {
         // If no image, send JSON data
@@ -94,14 +94,14 @@ const BannerList = () => {
         if (bannerData.title !== undefined) updateData.title = bannerData.title;
         if (bannerData.text !== undefined) updateData.text = bannerData.text;
         
-        console.log('PATCH updating banner with data:', updateData);
+        // console.log('PATCH updating banner with data:', updateData);
         
         const response = await ApiService.updateBanner(id, updateData);
-        console.log('Banner updated:', response.data);
+        // console.log('Banner updated:', response.data);
         return response.data;
       }
     } catch (error) {
-      console.error('Error updating banner:', error);
+      // console.error('Error updating banner:', error);
       throw error;
     }
   };
@@ -109,9 +109,9 @@ const BannerList = () => {
   const deleteBanner = async (id) => {
     try {
       await ApiService.deleteBanner(id);
-      console.log('Banner deleted:', id);
+      // console.log('Banner deleted:', id);
     } catch (error) {
-      console.error('Error deleting banner:', error);
+      // console.error('Error deleting banner:', error);
       throw error;
     }
   };
@@ -161,7 +161,7 @@ const BannerList = () => {
       setSelectedBanner(null);
       
     } catch (error) {
-      console.error('Error saving banner:', error);
+      // console.error('Error saving banner:', error);
       
       // Handle different error scenarios
       if (error.response?.data) {
@@ -210,7 +210,7 @@ const BannerList = () => {
         setSelectedBanner(null);
         
       } catch (error) {
-        console.error('Error deleting banner:', error);
+        // console.error('Error deleting banner:', error);
         
         // Handle different error scenarios
         if (error.response?.data?.error) {

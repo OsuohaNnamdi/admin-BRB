@@ -23,7 +23,7 @@ const ResetPassword = ({ email, onBack, onReset }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Password reset:', formData);
+    // console.log('Password reset:', formData);
     setIsReset(true);
     setTimeout(() => {
       navigate('/login');

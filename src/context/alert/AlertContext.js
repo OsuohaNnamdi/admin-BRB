@@ -6,7 +6,7 @@ const AlertContext = createContext();
 export const useAlert = () => {
   const context = useContext(AlertContext);
   if (!context) {
-    console.warn('useAlert must be used within an AlertProvider');
+    // console.warn('useAlert must be used within an AlertProvider');
     // Mock implementation for safety
     return {
       alerts: [],

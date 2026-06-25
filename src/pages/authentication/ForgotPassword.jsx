@@ -10,7 +10,7 @@ const ForgotPassword = ({ onBack, onEmailSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Password reset requested for:', email);
+    // console.log('Password reset requested for:', email);
     setIsSubmitted(true);
   };
 

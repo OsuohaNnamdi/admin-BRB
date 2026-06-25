@@ -61,14 +61,13 @@ class ApiService {
 
   // Update product with PATCH method
   async updateProduct(id, productData) {
-    // For FormData, let the browser set the Content-Type with boundary
     const config = productData instanceof FormData ? {} : {
       headers: {
         'Content-Type': 'application/json',
       },
     };
     
-    return apiClient.put(`/admin/products/${id}/`, productData, config, true);
+    return apiClient.patch(`/admin/products/${id}/`, productData, config, true);
   }
 
   async deleteProduct(id) {
@@ -118,7 +117,6 @@ class ApiService {
   }
 
   async createDeliveryPrice(priceData) {
-    console.log(priceData);
     return apiClient.post('/admin/delivery-prices/', priceData, {}, true);
   }
 

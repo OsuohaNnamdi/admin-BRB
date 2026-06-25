@@ -9,7 +9,7 @@ export const OrderProvider = ({ children }) => {
       const saved = localStorage.getItem('selectedOrder');
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
-      console.error('Error loading order from localStorage:', error);
+      // console.error('Error loading order from localStorage:', error);
       return null;
     }
   });
@@ -23,7 +23,7 @@ export const OrderProvider = ({ children }) => {
       try {
         localStorage.setItem('selectedOrder', JSON.stringify(selectedOrder));
       } catch (error) {
-        console.error('Error saving order to localStorage:', error);
+        // console.error('Error saving order to localStorage:', error);
       }
     } else {
       localStorage.removeItem('selectedOrder');

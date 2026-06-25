@@ -119,7 +119,7 @@ const OrderList = () => {
     } catch (error) {
       if (!isMountedRef.current) return;
       
-      console.error('Error updating order status:', error);
+      // console.error('Error updating order status:', error);
       handleUpdateError(error);
     }
   }, [updateOrderStatus, showSuccessStable, handleUpdateError]);
@@ -141,14 +141,14 @@ const OrderList = () => {
       
       if (!isMountedRef.current) return;
       
-      console.log('Orders fetched:', response.data);
+      // console.log('Orders fetched:', response.data);
       const ordersData = response.data.orders || response.data || [];
       updateOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (error) {
       if (!isMountedRef.current) return;
       
       if (error.name !== 'AbortError') {
-        console.error('Error fetching orders:', error);
+        // console.error('Error fetching orders:', error);
         showErrorStable(
           'Failed to load orders. Please try again.',
           'Load Error',

@@ -25,7 +25,7 @@ const [formData, setFormData] = useState({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Registration attempt:', formData);
+    // console.log('Registration attempt:', formData);
   };
 
   const togglePasswordVisibility = () => {

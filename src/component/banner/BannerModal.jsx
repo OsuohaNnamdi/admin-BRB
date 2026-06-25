@@ -115,7 +115,7 @@ const BannerModal = ({ isOpen, onClose, onSubmit, banner }) => {
       await onSubmit(formData);
       onClose();
     } catch (error) {
-      console.error('Error in modal submit:', error);
+      // console.error('Error in modal submit:', error);
     } finally {
       setLoading(false);
     }

@@ -71,7 +71,7 @@ const CategoryList = () => {
       if (loadingAlertId) removeAlert(loadingAlertId);
       
     } catch (error) {
-      console.error('Error fetching data:', error);
+      // console.error('Error fetching data:', error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       
@@ -128,7 +128,7 @@ const CategoryList = () => {
       setCategoryModalOpen(false);
       setSelectedCategory(null);
     } catch (error) {
-      console.error('Error saving category:', error);
+      // console.error('Error saving category:', error);
       
       if (error.response?.status === 409) {
         showError('A category with this name or slug already exists.', 'Duplicate', { duration: 5000 });
@@ -152,7 +152,7 @@ const CategoryList = () => {
       setSubcategoryModalOpen(false);
       setSelectedSubcategory(null);
     } catch (error) {
-      console.error('Error saving subcategory:', error);
+      // console.error('Error saving subcategory:', error);
       
       if (error.response?.status === 409) {
         showError('A subcategory with this name or slug already exists.', 'Duplicate', { duration: 5000 });
@@ -200,7 +200,7 @@ const CategoryList = () => {
       setSelectedSubcategory(null);
       
     } catch (error) {
-      console.error('Error deleting:', error);
+      // console.error('Error deleting:', error);
       
       if (loadingAlertId) removeAlert(loadingAlertId);
       

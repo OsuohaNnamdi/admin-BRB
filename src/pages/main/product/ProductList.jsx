@@ -52,7 +52,7 @@ const ProductList = () => {
       const response = await ApiService.getAdminProducts(page, 20); // 20 items per page
       const responseData = response.data;
       
-      console.log(`Fetched page ${page}:`, responseData);
+      // console.log(`Fetched page ${page}:`, responseData);
       
       // Handle paginated response
       if (responseData.results && Array.isArray(responseData.results)) {
@@ -80,7 +80,7 @@ const ProductList = () => {
       
       return [];
     } catch (error) {
-      console.error('Error fetching products:', error);
+      // console.error('Error fetching products:', error);
       showError(
         'Failed to load products. Please try again.',
         'Load Error',
@@ -117,10 +117,10 @@ const ProductList = () => {
         categoriesData = responseData;
       }
       
-      console.log('Categories fetched:', categoriesData.length);
+      // console.log('Categories fetched:', categoriesData.length);
       setCategories(categoriesData);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // console.error('Error fetching categories:', error);
       showError(
         'Failed to load categories. Some features may not work properly.',
         'Categories Load Error',
@@ -146,10 +146,10 @@ const ProductList = () => {
         subcategoriesData = responseData;
       }
       
-      console.log('Subcategories fetched:', subcategoriesData.length);
+      // console.log('Subcategories fetched:', subcategoriesData.length);
       setSubcategories(subcategoriesData);
     } catch (error) {
-      console.error('Error fetching subcategories:', error);
+      // console.error('Error fetching subcategories:', error);
       showError(
         'Failed to load subcategories.',
         'Subcategories Load Error',
@@ -164,10 +164,10 @@ const ProductList = () => {
   const createProduct = async (productData) => {
     try {
       const response = await ApiService.createProduct(productData);
-      console.log('Product created:', response.data);
+      // console.log('Product created:', response.data);
       return response.data.product || response.data;
     } catch (error) {
-      console.error('Error creating product:', error);
+      // console.error('Error creating product:', error);
       throw error;
     }
   };
@@ -194,13 +194,13 @@ const ProductList = () => {
         updateData.subcategory_ids = productData.subcategory_ids;
       }
       
-      console.log('PATCH updating product with data:', updateData);
+      // console.log('PATCH updating product with data:', updateData);
       
       const response = await ApiService.updateProduct(id, updateData);
-      console.log('Product updated (PATCH):', response.data);
+      // console.log('Product updated (PATCH):', response.data);
       return response.data.product || response.data;
     } catch (error) {
-      console.error('Error updating product:', error);
+      // console.error('Error updating product:', error);
       throw error;
     }
   };
@@ -208,9 +208,9 @@ const ProductList = () => {
   const deleteProduct = async (id) => {
     try {
       await ApiService.deleteProduct(id);
-      console.log('Product deleted:', id);
+      // console.log('Product deleted:', id);
     } catch (error) {
-      console.error('Error deleting product:', error);
+      // console.error('Error deleting product:', error);
       throw error;
     }
   };
@@ -220,7 +220,7 @@ const ProductList = () => {
     fetchProductsPage(1, false);
     fetchCategories();
     fetchSubcategories();
-  }, []);
+  }, [fetchProductsPage, fetchCategories, fetchSubcategories]);
 
   const handleEdit = (product) => {
     const productForEdit = {
@@ -240,7 +240,7 @@ const ProductList = () => {
       category_ids: product.categories ? product.categories.map(cat => cat.id) : [],
       subcategory_ids: product.subcategories ? product.subcategories.map(sub => sub.id) : []
     };
-    console.log('Product for edit:', productForEdit);
+    // console.log('Product for edit:', productForEdit);
     setSelectedProduct(productForEdit);
     setModalOpen(true);
   };
@@ -276,7 +276,7 @@ const ProductList = () => {
       setSelectedProduct(null);
       
     } catch (error) {
-      console.error('Error saving product:', error);
+      // console.error('Error saving product:', error);
           
       if (error.response?.data) {
         const backendErrors = error.response.data;
@@ -322,7 +322,7 @@ const ProductList = () => {
         setSelectedProduct(null);
         
       } catch (error) {
-        console.error('Error deleting product:', error);
+        // console.error('Error deleting product:', error);
         
         if (error.response?.data?.error) {
           showError(error.response.data.error, 'Delete Failed', { duration: 5000 });

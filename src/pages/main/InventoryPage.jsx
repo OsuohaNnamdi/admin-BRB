@@ -49,7 +49,7 @@ const InventoryPage = () => {
     
     try {
       const response = await ApiService.getAdminInventory(page);
-      console.log('Inventory fetched:', response.data);
+      // // console.log('Inventory fetched:', response.data);
       
       // Handle the paginated response format
       const { results, count, total_pages, current_page, page_size } = response.data;
@@ -72,7 +72,7 @@ const InventoryPage = () => {
       });
       
     } catch (error) {
-      console.error('Error fetching inventory:', error);
+      // console.error('Error fetching inventory:', error);
       showError(
         'Failed to load inventory. Please try again.',
         'Load Error',
@@ -108,7 +108,7 @@ const InventoryPage = () => {
       const searchResults = response.data.results || response.data.products || response.data || [];
       setSearchedProducts(searchResults.slice(0, 10)); // Limit to 10 results
     } catch (error) {
-      console.error('Error searching products:', error);
+      // console.error('Error searching products:', error);
       // Fallback to client-side search if API fails
       const filtered = products.filter(product => 
         product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -126,7 +126,7 @@ const InventoryPage = () => {
       const updatedProduct = response.data;
       return updatedProduct.stock;
     } catch (error) {
-      console.error('Error adjusting stock:', error);
+      // console.error('Error adjusting stock:', error);
       throw error;
     }
   }, []);

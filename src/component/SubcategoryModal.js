@@ -41,7 +41,7 @@ const SubcategoryModal = ({ isOpen, onClose, onSubmit, subcategory }) => {
       const categoriesData = response.data.categories || response.data || [];
       setCategories(categoriesData);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // console.error('Error fetching categories:', error);
     } finally {
       setLoadingCategories(false);
     }
@@ -84,7 +84,7 @@ const SubcategoryModal = ({ isOpen, onClose, onSubmit, subcategory }) => {
         category_id: formData.category_id
       });
     } catch (error) {
-      console.error('Error:', error);
+      // console.error('Error:', error);
     } finally {
       setIsSubmitting(false);
     }

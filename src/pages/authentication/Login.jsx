@@ -40,17 +40,17 @@ const Login = () => {
     let loadingAlertId = null;
     
     try {
-      console.log('Login attempt:', formData);
+      // console.log('Login attempt:', formData);
       
       // Show loading alert
       loadingAlertId = showLoading('Authenticating your credentials...', 'Signing In');
       
-      const response = await ApiService.adminLogin({
+      await ApiService.adminLogin({
         email: formData.email,
         password: formData.password
       });
 
-      console.log('Login successful:', response.data);
+      // console.log('Login successful:', response.data);
       
       // Remove loading alert and show success
       if (loadingAlertId) removeAlert(loadingAlertId);
@@ -62,7 +62,7 @@ const Login = () => {
       }, 1500);
       
     } catch (error) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       
       // Remove loading alert if it exists
       if (loadingAlertId) removeAlert(loadingAlertId);

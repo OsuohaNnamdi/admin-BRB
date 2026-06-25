@@ -35,10 +35,10 @@ const CouponList = () => {
     setLoading(true);
     try {
       const response = await ApiService.getAdminCoupons();
-      console.log('Coupons fetched:', response.data);
+      // console.log('Coupons fetched:', response.data);
       setCoupons(response.data || []);
     } catch (error) {
-      console.error('Error fetching coupons:', error);
+      // console.error('Error fetching coupons:', error);
       showError(
         'Failed to load coupons. Please try again.',
         'Load Error',
@@ -53,9 +53,9 @@ const CouponList = () => {
   const deleteCoupon = async (id) => {
     try {
       await ApiService.deleteCoupon(id);
-      console.log('Coupon deleted:', id);
+      // console.log('Coupon deleted:', id);
     } catch (error) {
-      console.error('Error deleting coupon:', error);
+      // console.error('Error deleting coupon:', error);
       throw error;
     }
   };
@@ -63,10 +63,10 @@ const CouponList = () => {
   const sendCouponToEmails = async (couponId, emails) => {
     try {
       const response = await ApiService.sendCoupon(couponId, emails);
-      console.log('Coupon sent:', response.data);
+      // console.log('Coupon sent:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error sending coupon:', error);
+      // console.error('Error sending coupon:', error);
       throw error;
     }
   };
@@ -121,7 +121,7 @@ const CouponList = () => {
       setSelectedCoupon(null);
       
     } catch (error) {
-      console.error('Error saving coupon:', error);
+      // console.error('Error saving coupon:', error);
       
       if (error.response?.data) {
         const backendErrors = error.response.data;
@@ -164,7 +164,7 @@ const CouponList = () => {
       setSelectedCoupon(null);
       
     } catch (error) {
-      console.error('Error sending coupon:', error);
+      // console.error('Error sending coupon:', error);
       
       if (error.response?.data?.error) {
         showError(error.response.data.error, 'Send Failed', { duration: 5000 });
@@ -196,7 +196,7 @@ const CouponList = () => {
         setSelectedCoupon(null);
         
       } catch (error) {
-        console.error('Error deleting coupon:', error);
+        // console.error('Error deleting coupon:', error);
         
         if (error.response?.data?.error) {
           showError(error.response.data.error, 'Delete Failed', { duration: 5000 });
